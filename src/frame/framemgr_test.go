@@ -5,7 +5,6 @@ import (
 	"github.com/esrrhs/go-engine/src/common"
 	"github.com/esrrhs/go-engine/src/rbuffergo"
 	"testing"
-	"time"
 )
 
 func Test0001(t *testing.T) {
@@ -97,5 +96,5 @@ func Test0001(t *testing.T) {
 	fm.resetStat()
 	fm.sendwin = rbuffergo.NewROBuffer(100, 0, 10000)
 	fm.recvwin = rbuffergo.NewROBuffer(100, 0, 10000)
-	fm.printStat(time.Now().UnixNano())
+	//fm.printStat(time.Now().UnixNano())
 }
