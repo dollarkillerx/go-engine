@@ -11,7 +11,7 @@ const (
 
 	bbc_maxfly_win     = 10
 	bbc_maxfly_grow    = 2.1
-	bbc_maxfly_compare = float64(1.5)
+	bbc_maxfly_compare = float64(0.6)
 )
 
 var prop_seq = []float64{1, 1, 1.2, 0.7}
@@ -45,25 +45,37 @@ func (bb *BBCongestion) CanSend(id int, size int) bool {
 
 func (bb *BBCongestion) Update() {
 
-	lastmaxfly := 0
-	for e := bb.maxflywin.FrontInter(); e != nil; e = e.Next() {
-		mf := e.Value.(int)
-		if mf > lastmaxfly {
-			lastmaxfly = mf
-		}
-	}
-
-	bb.maxflywin.PushBack(bb.flyeddata)
-
 	if bb.status == bbc_status_init {
-		if lastmaxfly > 0 && float64(bb.flyeddata)/float64(lastmaxfly) <= bbc_maxfly_compare {
-			bb.status = bbc_status_prop
-		} else {
-			bb.maxfly = int(float64(bb.maxfly) * bbc_maxfly_grow)
+		if bb.flyeddata > 0 {
+			if float64(bb.flyeddata)/float64(bb.maxfly) <= bbc_maxfly_compare {
+				bb.status = bbc_status_prop
+				//loggo.Debug("bbc_status_init flyeddata %d maxfly %d change", bb.flyeddata, bb.maxfly)
+			} else {
+				oldmaxfly := bb.maxfly
+				bb.maxfly = int(float64(oldmaxfly) * bbc_maxfly_grow)
+				//loggo.Debug("bbc_status_init grow flyeddata %d oldmaxfly %d maxfly %d", bb.flyeddata, oldmaxfly, bb.maxfly)
+			}
 		}
 	} else if bb.status == bbc_status_prop {
-		bb.maxfly = lastmaxfly
-		bb.maxfly = int(float64(bb.maxfly) * prop_seq[bb.propindex])
+
+		if bb.maxflywin.Full() {
+			bb.maxflywin.PopFront()
+		}
+		bb.maxflywin.PushBack(bb.flyeddata)
+
+		lastmaxfly := 0
+		for e := bb.maxflywin.FrontInter(); e != nil; e = e.Next() {
+			mf := e.Value.(int)
+			if mf > lastmaxfly {
+				lastmaxfly = mf
+			}
+		}
+
+		oldmaxfly := lastmaxfly
+		bb.maxfly = int(float64(oldmaxfly) * prop_seq[bb.propindex])
+		bb.propindex++
+		bb.propindex = bb.propindex % len(prop_seq)
+		//loggo.Debug("bbc_status_prop lastmaxfly %d oldmaxfly %d maxfly %d prop %v", lastmaxfly, oldmaxfly, bb.maxfly, prop_seq[bb.propindex])
 	} else {
 		panic("error status " + strconv.Itoa(bb.status))
 	}

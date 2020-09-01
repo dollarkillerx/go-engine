@@ -73,6 +73,10 @@ func (b *Rlistgo) Size() int {
 	return b.size
 }
 
+func (b *Rlistgo) Capacity() int {
+	return b.len
+}
+
 func (b *Rlistgo) Full() bool {
 	return b.size == b.len
 }
