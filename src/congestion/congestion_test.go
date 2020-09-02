@@ -51,15 +51,17 @@ func TestBB1(t *testing.T) {
 
 	ct := CongestionTest{}
 	ct.rtt_ms = 200
-	ct.bw_mbps = 20
+	ct.bw_mbps = 10
 	ct.packet_size = 500
-	ct.buf = rbuffergo.NewRList(ct.bw_mbps * 1024 * 1024 / ct.packet_size)
+	ct.buf = rbuffergo.NewRList(ct.bw_mbps * 1024 * 1024)
 	ct.Start()
 
 	send_mbps := 0
 	recv_mbps := 0
 	last := time.Now()
 	lastupdate := time.Now()
+	begin := time.Now()
+	start := time.Now()
 	for {
 		for {
 			if !bb.CanSend(0, ct.packet_size) {
@@ -93,5 +95,15 @@ func TestBB1(t *testing.T) {
 		}
 
 		time.Sleep(10)
+
+		if time.Now().Sub(begin) >= 30*time.Second {
+			begin = time.Now()
+			fmt.Printf("change from %d to %d \n", ct.bw_mbps, ct.bw_mbps*2)
+			ct.bw_mbps = ct.bw_mbps * 2
+		}
+
+		if time.Now().Sub(start) >= 60*time.Second {
+			break
+		}
 	}
 }
