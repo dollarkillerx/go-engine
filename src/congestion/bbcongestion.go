@@ -1,6 +1,7 @@
 package congestion
 
 import (
+	"fmt"
 	"github.com/esrrhs/go-engine/src/rbuffergo"
 	"math"
 	"strconv"
@@ -11,7 +12,7 @@ const (
 	bbc_status_init = 0
 	bbc_status_prop = 1
 
-	bbc_win            = 10
+	bbc_win            = 4
 	bbc_maxfly_grow    = 2.1
 	bbc_maxfly_compare = float64(1.5)
 )
@@ -28,6 +29,8 @@ type BBCongestion struct {
 	flyedwin      *rbuffergo.Rlistgo
 	propindex     int
 	last          time.Time
+	lastratewin   float64
+	lastflyedwin  int
 }
 
 func (bb *BBCongestion) Init() {
@@ -51,13 +54,6 @@ func (bb *BBCongestion) CanSend(id int, size int) bool {
 }
 
 func (bb *BBCongestion) Update() {
-	if time.Now().Sub(bb.last) > time.Second*2 {
-		bb.last = time.Now()
-		bb.update()
-	}
-}
-
-func (bb *BBCongestion) update() {
 
 	if bb.flyeddata <= 0 {
 		return
@@ -73,11 +69,11 @@ func (bb *BBCongestion) update() {
 	}
 	bb.rateflywin.PushBack(rate)
 
-	lastrate := math.MaxFloat64
+	lastratewin := math.MaxFloat64
 	for e := bb.rateflywin.FrontInter(); e != nil; e = e.Next() {
 		rate := e.Value.(float64)
-		if rate < lastrate {
-			lastrate = rate
+		if rate < lastratewin {
+			lastratewin = rate
 		}
 	}
 
@@ -107,7 +103,7 @@ func (bb *BBCongestion) update() {
 		}
 		bb.lastflyeddata = bb.flyeddata
 	} else if bb.status == bbc_status_prop {
-		maxfly := float64(lastflyedwin) * lastrate
+		maxfly := float64(lastflyedwin) * lastratewin
 		bb.maxfly = int(maxfly * prop_seq[bb.propindex])
 		//loggo.Debug("bbc_status_prop lastflyedwin %v lastrate %v maxfly %d prop %v", lastflyedwin, lastrate, bb.maxfly, prop_seq[bb.propindex])
 		bb.propindex++
@@ -118,4 +114,11 @@ func (bb *BBCongestion) update() {
 
 	bb.flyeddata = 0
 	bb.flyingdata = 0
+	bb.lastratewin = lastratewin
+	bb.lastflyedwin = lastflyedwin
+}
+
+func (bb *BBCongestion) Info() string {
+	return fmt.Sprintf("status %v maxfly %v flyeddata %v lastratewin %v lastflyedwin %v", bb.status, bb.maxfly,
+		bb.flyeddata, bb.lastratewin, bb.lastflyedwin)
 }

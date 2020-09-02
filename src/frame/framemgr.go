@@ -82,7 +82,8 @@ type FrameMgr struct {
 
 	debugid string
 
-	ct congestion.Congestion
+	ct           congestion.Congestion
+	ctLastSendId int32
 }
 
 func (fm *FrameMgr) SetDebugid(debugid string) {
@@ -154,10 +155,6 @@ func (fm *FrameMgr) Update() bool {
 	fm.hb()
 
 	fm.second(cur)
-
-	if fm.ct != nil {
-		fm.ct.Update()
-	}
 
 	return avtive > 0
 }
@@ -256,10 +253,14 @@ func (fm *FrameMgr) calSendList(cur int64) {
 
 	for e := fm.sendwin.FrontInter(); e != nil; e = e.Next() {
 		f := e.Value.(*Frame)
+		if fm.ct != nil && f.Id < fm.ctLastSendId {
+			continue
+		}
 		if !f.Acked && (f.Resend || cur-f.Sendtime > int64(fm.resend_timems*(int)(time.Millisecond))) &&
 			cur-f.Sendtime > fm.rttns {
 			if fm.ct != nil && f.Data != nil && len(f.Data.Data) > 0 && !fm.ct.CanSend(int(f.Id), len(f.Data.Data)) {
-				break
+				fm.ctLastSendId = f.Id
+				return
 			}
 			f.Sendtime = cur
 			fm.sendFrame(f)
@@ -271,6 +272,7 @@ func (fm *FrameMgr) calSendList(cur int64) {
 			//loggo.Debug("debugid %v push frame to sendlist %v %v", fm.debugid, f.Id, len(f.Data.Data))
 		}
 	}
+	fm.ctLastSendId = -1
 }
 
 func (fm *FrameMgr) GetSendList() *list.List {
@@ -773,6 +775,11 @@ func (fm *FrameMgr) second(cur int64) {
 	if cur-fm.lastPrintStat > (int64)(time.Second) {
 		fm.lastPrintStat = cur
 
+		ctinfo := ""
+		if fm.ct != nil {
+			ctinfo = fm.ct.Info()
+		}
+
 		if fm.openstat > 0 {
 			fs := fm.fs
 			loggo.Info("\nsendDataNum %v\nrecvDataNum %v\nsendReqNum %v\nrecvReqNum %v\nsendAckNum %v\nrecvAckNum %v\n"+
@@ -780,7 +787,8 @@ func (fm *FrameMgr) second(cur int64) {
 				"sendping %v\nrecvping %v\nsendpong %v\nrecvpong %v\n"+
 				"sendwin %v\nrecvwin %v\n"+
 				"recvOldNum %v\nrecvOutWinNum %v\n"+
-				"rtt %v\n",
+				"rtt %v\n"+
+				"ct %v\n",
 				fs.sendDataNum, fs.recvDataNum,
 				fs.sendReqNum, fs.recvReqNum,
 				fs.sendAckNum, fs.recvAckNum,
@@ -791,8 +799,13 @@ func (fm *FrameMgr) second(cur int64) {
 				fs.sendpong, fs.recvpong,
 				fm.sendwin.Size(), fm.recvwin.Size(),
 				fs.recvOldNum, fs.recvOutWinNum,
-				time.Duration(fm.rttns).String())
+				time.Duration(fm.rttns).String(),
+				ctinfo)
 			fm.resetStat()
+		}
+
+		if fm.ct != nil {
+			fm.ct.Update()
 		}
 
 	}
