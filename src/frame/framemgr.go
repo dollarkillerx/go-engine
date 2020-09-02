@@ -402,7 +402,6 @@ func (fm *FrameMgr) processRecvList(tmpreq map[int32]int, tmpack map[int32]int, 
 				break
 			}
 		} else {
-			f.Resend = true
 			break
 		}
 	}
