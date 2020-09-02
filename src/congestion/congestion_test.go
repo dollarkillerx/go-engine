@@ -59,7 +59,6 @@ func TestBB1(t *testing.T) {
 	send_mbps := 0
 	recv_mbps := 0
 	last := time.Now()
-	lastupdate := time.Now()
 	begin := time.Now()
 	start := time.Now()
 	for {
@@ -71,12 +70,9 @@ func TestBB1(t *testing.T) {
 			send_mbps += ct.packet_size
 		}
 
-		if time.Now().Sub(lastupdate) >= 2*time.Second {
-			lastupdate = time.Now()
-			//fmt.Printf("begin maxfly %d flyeddata %d flyingdata %d status %d\n", bb.maxfly, bb.flyeddata, bb.flyingdata, bb.status)
-			bb.Update()
-			//fmt.Printf("end maxfly %d flyeddata %d flyingdata %d status %d\n", bb.maxfly, bb.flyeddata, bb.flyingdata, bb.status)
-		}
+		//fmt.Printf("begin maxfly %d flyeddata %d flyingdata %d status %d\n", bb.maxfly, bb.flyeddata, bb.flyingdata, bb.status)
+		bb.Update()
+		//fmt.Printf("end maxfly %d flyeddata %d flyingdata %d status %d\n", bb.maxfly, bb.flyeddata, bb.flyingdata, bb.status)
 
 		for {
 			b := ct.RecvMsg()

@@ -3,6 +3,7 @@ package conn
 import (
 	"errors"
 	"github.com/esrrhs/go-engine/src/common"
+	"github.com/esrrhs/go-engine/src/congestion"
 	"github.com/esrrhs/go-engine/src/frame"
 	"github.com/esrrhs/go-engine/src/group"
 	"github.com/esrrhs/go-engine/src/loggo"
@@ -22,7 +23,6 @@ type RicmpConfig struct {
 	ResendTimems       int
 	Compress           int
 	Stat               int
-	HBTimeoutms        int
 	ConnectTimeoutMs   int
 	CloseTimeoutMs     int
 	CloseWaitTimeoutMs int
@@ -39,7 +39,6 @@ func DefaultRicmpConfig() *RicmpConfig {
 		ResendTimems:       200,
 		Compress:           0,
 		Stat:               0,
-		HBTimeoutms:        10000,
 		ConnectTimeoutMs:   10000,
 		CloseTimeoutMs:     5000,
 		CloseWaitTimeoutMs: 5000,
@@ -263,6 +262,7 @@ func (c *ricmpConn) Dial(dst string) (Conn, error) {
 	id := common.Guid()
 	fm := frame.NewFrameMgr(c.config.CutSize, c.config.MaxId, c.config.BufferSize, c.config.MaxWin, c.config.ResendTimems, c.config.Compress, c.config.Stat)
 	fm.SetDebugid(id)
+	fm.SetCongestion(&congestion.BBCongestion{})
 
 	dialer := &ricmpConnDialer{serveraddr: addr, conn: conn, fm: fm}
 
@@ -424,6 +424,7 @@ func (c *ricmpConn) loopListenerRecv() error {
 			id := common.Guid()
 			fm := frame.NewFrameMgr(c.config.CutSize, c.config.MaxId, c.config.BufferSize, c.config.MaxWin, c.config.ResendTimems, c.config.Compress, c.config.Stat)
 			fm.SetDebugid(id)
+			fm.SetCongestion(&congestion.BBCongestion{})
 
 			sonny := &ricmpConnListenerSonny{
 				dstaddr:    srcaddr,
@@ -593,7 +594,7 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 		avctive := fm.Update()
 
 		// timeout
-		if fm.IsHBTimeout(c.config.HBTimeoutms) {
+		if fm.IsHBTimeout() {
 			loggo.Debug("close inactive conn %s", c.Info())
 			break
 		}

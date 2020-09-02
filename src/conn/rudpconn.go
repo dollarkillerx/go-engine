@@ -22,7 +22,6 @@ type RudpConfig struct {
 	ResendTimems       int
 	Compress           int
 	Stat               int
-	HBTimeoutms        int
 	ConnectTimeoutMs   int
 	CloseTimeoutMs     int
 	CloseWaitTimeoutMs int
@@ -39,7 +38,6 @@ func DefaultRudpConfig() *RudpConfig {
 		ResendTimems:       200,
 		Compress:           0,
 		Stat:               0,
-		HBTimeoutms:        10000,
 		ConnectTimeoutMs:   10000,
 		CloseTimeoutMs:     5000,
 		CloseWaitTimeoutMs: 5000,
@@ -603,7 +601,7 @@ func (c *rudpConn) update_rudp(wg *group.Group, fm *frame.FrameMgr, conn *net.UD
 		}
 
 		// timeout
-		if fm.IsHBTimeout(c.config.HBTimeoutms) {
+		if fm.IsHBTimeout() {
 			reason = "HBTimeout"
 			loggo.Debug("close inactive conn %s", c.Info())
 			break

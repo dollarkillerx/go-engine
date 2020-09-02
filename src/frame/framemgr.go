@@ -3,6 +3,7 @@ package frame
 import (
 	"container/list"
 	"github.com/esrrhs/go-engine/src/common"
+	"github.com/esrrhs/go-engine/src/congestion"
 	"github.com/esrrhs/go-engine/src/loggo"
 	"github.com/esrrhs/go-engine/src/rbuffergo"
 	"github.com/golang/protobuf/proto"
@@ -31,6 +32,10 @@ type FrameStat struct {
 	recvOldNum      int
 	recvOutWinNum   int
 }
+
+const (
+	hbTimeoutSecond = 10
+)
 
 type FrameMgr struct {
 	frame_max_size int
@@ -76,10 +81,17 @@ type FrameMgr struct {
 	lastPrintStat int64
 
 	debugid string
+
+	ct congestion.Congestion
 }
 
 func (fm *FrameMgr) SetDebugid(debugid string) {
 	fm.debugid = debugid
+}
+
+func (fm *FrameMgr) SetCongestion(ct congestion.Congestion) {
+	fm.ct = ct
+	fm.ct.Init()
 }
 
 func NewFrameMgr(frame_max_size int, frame_max_id int, buffersize int, windowsize int, resend_timems int, compress int, openstat int) *FrameMgr {
@@ -142,6 +154,10 @@ func (fm *FrameMgr) Update() bool {
 	fm.hb()
 
 	fm.second(cur)
+
+	if fm.ct != nil {
+		fm.ct.Update()
+	}
 
 	return avtive > 0
 }
@@ -238,11 +254,13 @@ func (fm *FrameMgr) cutSendBufferToWindow(cur int64) {
 
 func (fm *FrameMgr) calSendList(cur int64) {
 
-	i := 0
 	for e := fm.sendwin.FrontInter(); e != nil; e = e.Next() {
 		f := e.Value.(*Frame)
 		if !f.Acked && (f.Resend || cur-f.Sendtime > int64(fm.resend_timems*(int)(time.Millisecond))) &&
 			cur-f.Sendtime > fm.rttns {
+			if fm.ct != nil && f.Data != nil && len(f.Data.Data) > 0 && !fm.ct.CanSend(int(f.Id), len(f.Data.Data)) {
+				break
+			}
 			f.Sendtime = cur
 			fm.sendFrame(f)
 			f.Resend = false
@@ -250,7 +268,6 @@ func (fm *FrameMgr) calSendList(cur int64) {
 				fm.fs.sendDataNum++
 				fm.fs.sendDataNumsMap[f.Id]++
 			}
-			i++
 			//loggo.Debug("debugid %v push frame to sendlist %v %v", fm.debugid, f.Id, len(f.Data.Data))
 		}
 	}
@@ -362,6 +379,9 @@ func (fm *FrameMgr) processRecvList(tmpreq map[int32]int, tmpack map[int32]int, 
 		if fm.openstat > 0 {
 			fm.fs.recvAckNum += num
 			fm.fs.recvAckNumsMap[id] += num
+		}
+		if fm.ct != nil {
+			fm.ct.RecvAck(int(id), len(f.Data.Data))
 		}
 	}
 
@@ -809,9 +829,9 @@ func (fm *FrameMgr) MarshalFrame(f *Frame) ([]byte, error) {
 	return mb, err
 }
 
-func (fm *FrameMgr) IsHBTimeout(timeoutms int) bool {
+func (fm *FrameMgr) IsHBTimeout() bool {
 	now := time.Now().UnixNano()
-	if now-fm.lastRecvHBTime > int64(time.Millisecond)*int64(timeoutms) && now-fm.lastRecvDataTime > int64(time.Millisecond)*int64(timeoutms) {
+	if now-fm.lastRecvHBTime > int64(time.Second)*hbTimeoutSecond && now-fm.lastRecvDataTime > int64(time.Second)*hbTimeoutSecond {
 		return true
 	}
 	return false

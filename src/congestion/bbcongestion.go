@@ -3,6 +3,7 @@ package congestion
 import (
 	"github.com/esrrhs/go-engine/src/rbuffergo"
 	"strconv"
+	"time"
 )
 
 const (
@@ -23,12 +24,14 @@ type BBCongestion struct {
 	flyingdata int
 	maxflywin  *rbuffergo.Rlistgo
 	propindex  int
+	last       time.Time
 }
 
 func (bb *BBCongestion) Init() {
 	bb.status = bbc_status_init
 	bb.maxfly = 1024 * 1024
 	bb.maxflywin = rbuffergo.NewRList(bbc_maxfly_win)
+	bb.last = time.Now()
 }
 
 func (bb *BBCongestion) RecvAck(id int, size int) {
@@ -44,6 +47,13 @@ func (bb *BBCongestion) CanSend(id int, size int) bool {
 }
 
 func (bb *BBCongestion) Update() {
+	if time.Now().Sub(bb.last) > time.Second*2 {
+		bb.last = time.Now()
+		bb.update()
+	}
+}
+
+func (bb *BBCongestion) update() {
 
 	if bb.status == bbc_status_init {
 		if bb.flyeddata > 0 {
