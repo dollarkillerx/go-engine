@@ -2,6 +2,7 @@ package congestion
 
 import (
 	"github.com/esrrhs/go-engine/src/rbuffergo"
+	"math"
 	"strconv"
 	"time"
 )
@@ -10,27 +11,30 @@ const (
 	bbc_status_init = 0
 	bbc_status_prop = 1
 
-	bbc_maxfly_win     = 10
+	bbc_win            = 10
 	bbc_maxfly_grow    = 2.1
-	bbc_maxfly_compare = float64(0.6)
+	bbc_maxfly_compare = float64(1.5)
 )
 
-var prop_seq = []float64{1, 1, 1.2, 0.7}
+var prop_seq = []float64{1, 1, 1.3, 0.7}
 
 type BBCongestion struct {
-	status     int
-	maxfly     int
-	flyeddata  int
-	flyingdata int
-	maxflywin  *rbuffergo.Rlistgo
-	propindex  int
-	last       time.Time
+	status        int
+	maxfly        int
+	flyeddata     int
+	lastflyeddata int
+	flyingdata    int
+	rateflywin    *rbuffergo.Rlistgo
+	flyedwin      *rbuffergo.Rlistgo
+	propindex     int
+	last          time.Time
 }
 
 func (bb *BBCongestion) Init() {
 	bb.status = bbc_status_init
 	bb.maxfly = 1024 * 1024
-	bb.maxflywin = rbuffergo.NewRList(bbc_maxfly_win)
+	bb.rateflywin = rbuffergo.NewRList(bbc_win)
+	bb.flyedwin = rbuffergo.NewRList(bbc_win)
 	bb.last = time.Now()
 }
 
@@ -55,37 +59,59 @@ func (bb *BBCongestion) Update() {
 
 func (bb *BBCongestion) update() {
 
+	if bb.flyeddata <= 0 {
+		return
+	}
+
+	rate := float64(bb.maxfly) / float64(bb.flyeddata)
+	if rate < 1 {
+		rate = 1
+	}
+
+	if bb.rateflywin.Full() {
+		bb.rateflywin.PopFront()
+	}
+	bb.rateflywin.PushBack(rate)
+
+	lastrate := math.MaxFloat64
+	for e := bb.rateflywin.FrontInter(); e != nil; e = e.Next() {
+		rate := e.Value.(float64)
+		if rate < lastrate {
+			lastrate = rate
+		}
+	}
+
+	if bb.flyedwin.Full() {
+		bb.flyedwin.PopFront()
+	}
+	bb.flyedwin.PushBack(bb.flyeddata)
+
+	lastflyedwin := 0
+	for e := bb.flyedwin.FrontInter(); e != nil; e = e.Next() {
+		flyedwin := e.Value.(int)
+		if flyedwin > lastflyedwin {
+			lastflyedwin = flyedwin
+		}
+	}
+
 	if bb.status == bbc_status_init {
-		if bb.flyeddata > 0 {
-			if float64(bb.flyeddata)/float64(bb.maxfly) <= bbc_maxfly_compare {
-				bb.status = bbc_status_prop
-				//loggo.Debug("bbc_status_init flyeddata %d maxfly %d change", bb.flyeddata, bb.maxfly)
-			} else {
-				oldmaxfly := bb.maxfly
-				bb.maxfly = int(float64(oldmaxfly) * bbc_maxfly_grow)
-				//loggo.Debug("bbc_status_init grow flyeddata %d oldmaxfly %d maxfly %d", bb.flyeddata, oldmaxfly, bb.maxfly)
-			}
+		if float64(bb.flyeddata) <= bbc_maxfly_compare*float64(bb.lastflyeddata) {
+			oldmaxfly := bb.maxfly
+			bb.maxfly = int(float64(oldmaxfly) / bbc_maxfly_grow)
+			bb.status = bbc_status_prop
+			//loggo.Debug("bbc_status_init flyeddata %d maxfly %d change", bb.flyeddata, bb.maxfly)
+		} else {
+			oldmaxfly := bb.maxfly
+			bb.maxfly = int(float64(oldmaxfly) * bbc_maxfly_grow)
+			//loggo.Debug("bbc_status_init grow flyeddata %d oldmaxfly %d maxfly %d", bb.flyeddata, oldmaxfly, bb.maxfly)
 		}
+		bb.lastflyeddata = bb.flyeddata
 	} else if bb.status == bbc_status_prop {
-
-		if bb.maxflywin.Full() {
-			bb.maxflywin.PopFront()
-		}
-		bb.maxflywin.PushBack(bb.flyeddata)
-
-		lastmaxfly := 0
-		for e := bb.maxflywin.FrontInter(); e != nil; e = e.Next() {
-			mf := e.Value.(int)
-			if mf > lastmaxfly {
-				lastmaxfly = mf
-			}
-		}
-
-		oldmaxfly := lastmaxfly
-		bb.maxfly = int(float64(oldmaxfly) * prop_seq[bb.propindex])
+		maxfly := float64(lastflyedwin) * lastrate
+		bb.maxfly = int(maxfly * prop_seq[bb.propindex])
+		//loggo.Debug("bbc_status_prop lastflyedwin %v lastrate %v maxfly %d prop %v", lastflyedwin, lastrate, bb.maxfly, prop_seq[bb.propindex])
 		bb.propindex++
 		bb.propindex = bb.propindex % len(prop_seq)
-		//loggo.Debug("bbc_status_prop lastmaxfly %d oldmaxfly %d maxfly %d prop %v", lastmaxfly, oldmaxfly, bb.maxfly, prop_seq[bb.propindex])
 	} else {
 		panic("error status " + strconv.Itoa(bb.status))
 	}

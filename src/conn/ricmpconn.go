@@ -27,6 +27,7 @@ type RicmpConfig struct {
 	CloseTimeoutMs     int
 	CloseWaitTimeoutMs int
 	AcceptChanLen      int
+	Congestion         string
 }
 
 func DefaultRicmpConfig() *RicmpConfig {
@@ -43,6 +44,7 @@ func DefaultRicmpConfig() *RicmpConfig {
 		CloseTimeoutMs:     5000,
 		CloseWaitTimeoutMs: 5000,
 		AcceptChanLen:      128,
+		Congestion:         "bb",
 	}
 }
 
@@ -262,7 +264,9 @@ func (c *ricmpConn) Dial(dst string) (Conn, error) {
 	id := common.Guid()
 	fm := frame.NewFrameMgr(c.config.CutSize, c.config.MaxId, c.config.BufferSize, c.config.MaxWin, c.config.ResendTimems, c.config.Compress, c.config.Stat)
 	fm.SetDebugid(id)
-	fm.SetCongestion(&congestion.BBCongestion{})
+	if c.config.Congestion == "bb" {
+		fm.SetCongestion(&congestion.BBCongestion{})
+	}
 
 	dialer := &ricmpConnDialer{serveraddr: addr, conn: conn, fm: fm}
 
@@ -424,7 +428,9 @@ func (c *ricmpConn) loopListenerRecv() error {
 			id := common.Guid()
 			fm := frame.NewFrameMgr(c.config.CutSize, c.config.MaxId, c.config.BufferSize, c.config.MaxWin, c.config.ResendTimems, c.config.Compress, c.config.Stat)
 			fm.SetDebugid(id)
-			fm.SetCongestion(&congestion.BBCongestion{})
+			if c.config.Congestion == "bb" {
+				fm.SetCongestion(&congestion.BBCongestion{})
+			}
 
 			sonny := &ricmpConnListenerSonny{
 				dstaddr:    srcaddr,

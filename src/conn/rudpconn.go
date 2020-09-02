@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/esrrhs/go-engine/src/common"
+	"github.com/esrrhs/go-engine/src/congestion"
 	"github.com/esrrhs/go-engine/src/frame"
 	"github.com/esrrhs/go-engine/src/group"
 	"github.com/esrrhs/go-engine/src/loggo"
@@ -26,6 +27,7 @@ type RudpConfig struct {
 	CloseTimeoutMs     int
 	CloseWaitTimeoutMs int
 	AcceptChanLen      int
+	Congestion         string
 }
 
 func DefaultRudpConfig() *RudpConfig {
@@ -42,6 +44,7 @@ func DefaultRudpConfig() *RudpConfig {
 		CloseTimeoutMs:     5000,
 		CloseWaitTimeoutMs: 5000,
 		AcceptChanLen:      128,
+		Congestion:         "bb",
 	}
 }
 
@@ -267,6 +270,9 @@ func (c *rudpConn) Dial(dst string) (Conn, error) {
 	id := common.Guid()
 	fm := frame.NewFrameMgr(c.config.CutSize, c.config.MaxId, c.config.BufferSize, c.config.MaxWin, c.config.ResendTimems, c.config.Compress, c.config.Stat)
 	fm.SetDebugid(id)
+	if c.config.Congestion == "bb" {
+		fm.SetCongestion(&congestion.BBCongestion{})
+	}
 
 	dialer := &rudpConnDialer{conn: conn.(*net.UDPConn), fm: fm}
 
@@ -433,6 +439,9 @@ func (c *rudpConn) loopListenerRecv() error {
 			id := common.Guid()
 			fm := frame.NewFrameMgr(c.config.CutSize, c.config.MaxId, c.config.BufferSize, c.config.MaxWin, c.config.ResendTimems, c.config.Compress, c.config.Stat)
 			fm.SetDebugid(id)
+			if c.config.Congestion == "bb" {
+				fm.SetCongestion(&congestion.BBCongestion{})
+			}
 
 			sonny := &rudpConnListenerSonny{
 				dstaddr:    srcaddr,
