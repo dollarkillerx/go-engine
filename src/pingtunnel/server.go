@@ -441,7 +441,7 @@ func (p *Server) RecvTCP(conn *ServerConn, id string, src *net.IPAddr) {
 		}
 
 		diffclose := now.Sub(startCloseTime)
-		if diffclose > time.Second*10 {
+		if diffclose > time.Second*60 {
 			loggo.Info("close conn had timeout %s %s", conn.id, conn.tcpaddrTarget.String())
 			break
 		}

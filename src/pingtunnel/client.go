@@ -490,7 +490,7 @@ func (p *Client) AcceptTcpConn(conn *net.TCPConn, targetAddr string) {
 		}
 
 		diffclose := now.Sub(startCloseTime)
-		if diffclose > time.Second*10 {
+		if diffclose > time.Second*60 {
 			loggo.Info("close conn had timeout %s %s", clientConn.id, clientConn.tcpaddr.String())
 			break
 		}
