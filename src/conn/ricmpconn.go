@@ -549,28 +549,6 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 	loggo.Debug("start ricmp conn %s", c.Info())
 
 	stage := "open"
-	wg.Go("ricmpConn update_ricmp send"+" "+c.Info(), func() error {
-		for !wg.IsExit() && stage != "closewait" {
-			// send udp
-			sendlist := fm.GetSendList()
-			if sendlist.Len() > 0 {
-				for e := sendlist.Front(); e != nil; e = e.Next() {
-					f := e.Value.(*frame.Frame)
-					mb, err := fm.MarshalFrame(f)
-					if err != nil {
-						loggo.Error("MarshalFrame fail %s", err)
-						return err
-					}
-					conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
-					c.send_icmp(conn, mb, dstaddr)
-					//loggo.Debug("%s send frame to %s %d", c.Info(), dstaddr, f.Id)
-				}
-			} else {
-				time.Sleep(time.Millisecond * 100)
-			}
-		}
-		return nil
-	})
 
 	if readconn {
 		wg.Go("ricmpConn update_ricmp recv"+" "+c.Info(), func() error {
@@ -595,22 +573,40 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 		})
 	}
 
+	reason := ""
+
 	for !wg.IsExit() {
 
 		avctive := fm.Update()
 
+		// send udp
+		sendlist := fm.GetSendList()
+		for e := sendlist.Front(); e != nil; e = e.Next() {
+			f := e.Value.(*frame.Frame)
+			mb, err := fm.MarshalFrame(f)
+			if err != nil {
+				loggo.Error("MarshalFrame fail %s", err)
+				return err
+			}
+			conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
+			c.send_icmp(conn, mb, dstaddr)
+			//loggo.Debug("%s send frame to %s %d", c.Info(), dstaddr, f.Id)
+		}
+
 		// timeout
 		if fm.IsHBTimeout() {
+			reason = "HBTimeout"
 			loggo.Debug("close inactive conn %s", c.Info())
 			break
 		}
 
 		if fm.IsRemoteClosed() {
+			reason = "RemoteClose"
 			loggo.Debug("closed by remote conn %s", c.Info())
 			break
 		}
 
-		if !avctive {
+		if !avctive && sendlist.Len() <= 0 {
 			time.Sleep(time.Millisecond * 10)
 		}
 	}
@@ -624,6 +620,20 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 		now := time.Now()
 
 		fm.Update()
+
+		// send udp
+		sendlist := fm.GetSendList()
+		for e := sendlist.Front(); e != nil; e = e.Next() {
+			f := e.Value.(*frame.Frame)
+			mb, err := fm.MarshalFrame(f)
+			if err != nil {
+				loggo.Error("MarshalFrame fail %s", err)
+				return err
+			}
+			conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
+			c.send_icmp(conn, mb, dstaddr)
+			//loggo.Debug("%s send frame to %s %d", c.Info(), dstaddr, f.Id)
+		}
 
 		diffclose := now.Sub(startCloseTime)
 		if diffclose > time.Millisecond*time.Duration(c.config.CloseTimeoutMs) {
@@ -663,7 +673,7 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 
 	loggo.Debug("close ricmp conn %s", c.Info())
 
-	return errors.New("closed")
+	return errors.New("closed " + reason)
 }
 
 func (c *ricmpConn) send_icmp(conn *icmp.PacketConn, data []byte, dst *net.IPAddr) {
