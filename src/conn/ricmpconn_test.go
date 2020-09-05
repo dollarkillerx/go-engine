@@ -370,7 +370,7 @@ func Test0008RICMP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen("127.0.0.1")
+	cc, err := c.Listen("0.0.0.0")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -451,7 +451,7 @@ func Test0009RICMP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen("127.0.0.1")
+	cc, err := c.Listen("0.0.0.0")
 	if err != nil {
 		fmt.Println(err)
 		return
