@@ -2,6 +2,7 @@ package conn
 
 import (
 	"errors"
+	"github.com/esrrhs/go-engine/src/common"
 	"io"
 	"strings"
 )
@@ -27,6 +28,8 @@ func NewConn(proto string) (Conn, error) {
 		return &udpConn{}, nil
 	} else if proto == "rudp" {
 		return &rudpConn{}, nil
+	} else if proto == "ricmp" {
+		return &ricmpConn{id: common.UniqueId()}, nil
 	}
 	return nil, errors.New("undefined proto " + proto)
 }

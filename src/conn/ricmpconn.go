@@ -1,6 +1,7 @@
 package conn
 
 import (
+	"encoding/binary"
 	"errors"
 	"github.com/esrrhs/go-engine/src/common"
 	"github.com/esrrhs/go-engine/src/congestion"
@@ -9,6 +10,9 @@ import (
 	"github.com/esrrhs/go-engine/src/loggo"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/icmp"
+	"golang.org/x/net/ipv4"
+	"math"
+	"math/rand"
 	"net"
 	"sync"
 	"time"
@@ -50,6 +54,7 @@ func DefaultRicmpConfig() *RicmpConfig {
 
 type ricmpConn struct {
 	info          string
+	id            string
 	config        *RicmpConfig
 	dialer        *ricmpConnDialer
 	listenersonny *ricmpConnListenerSonny
@@ -63,13 +68,21 @@ type ricmpConnDialer struct {
 	conn       *icmp.PacketConn
 	fm         *frame.FrameMgr
 	wg         *group.Group
+	icmpId     int
+	icmpSeq    int
+	icmpProto  int
+	icmpFlag   IcmpMsg_TYPE
 }
 
 type ricmpConnListenerSonny struct {
-	dstaddr    *net.IPAddr
+	dstaddr    net.Addr
 	fatherconn *icmp.PacketConn
 	fm         *frame.FrameMgr
 	wg         *group.Group
+	icmpId     int
+	icmpSeq    int
+	icmpProto  int
+	icmpFlag   IcmpMsg_TYPE
 }
 
 type ricmpConnListener struct {
@@ -237,11 +250,11 @@ func (c *ricmpConn) Info() string {
 		return c.info
 	}
 	if c.dialer != nil {
-		c.info = c.dialer.conn.LocalAddr().String() + "<--ricmp-->" + c.dialer.serveraddr.String()
+		c.info = c.dialer.conn.LocalAddr().String() + "<--ricmp " + c.id + "-->" + c.dialer.serveraddr.String()
 	} else if c.listener != nil {
-		c.info = "ricmp--" + c.listener.listenerconn.LocalAddr().String()
+		c.info = "ricmp " + c.id + "--" + c.listener.listenerconn.LocalAddr().String()
 	} else if c.listenersonny != nil {
-		c.info = c.listenersonny.fatherconn.LocalAddr().String() + "<--ricmp-->" + c.listenersonny.dstaddr.String()
+		c.info = c.listenersonny.fatherconn.LocalAddr().String() + "<--ricmp " + c.id + "-->" + c.listenersonny.dstaddr.String()
 	} else {
 		c.info = "empty ricmp conn"
 	}
@@ -268,9 +281,10 @@ func (c *ricmpConn) Dial(dst string) (Conn, error) {
 		fm.SetCongestion(&congestion.BBCongestion{})
 	}
 
-	dialer := &ricmpConnDialer{serveraddr: addr, conn: conn, fm: fm}
+	dialer := &ricmpConnDialer{serveraddr: addr, conn: conn, fm: fm,
+		icmpId: rand.Intn(math.MaxInt16), icmpSeq: 0, icmpProto: int(IcmpMsg_PING_PROTO), icmpFlag: IcmpMsg_CLIENT_SEND_FLAG}
 
-	u := &ricmpConn{config: c.config, dialer: dialer}
+	u := &ricmpConn{id: common.UniqueId(), config: c.config, dialer: dialer}
 
 	loggo.Debug("start connect remote ricmp %s %s", u.Info(), id)
 
@@ -291,13 +305,14 @@ func (c *ricmpConn) Dial(dst string) (Conn, error) {
 			f := e.Value.(*frame.Frame)
 			mb, _ := u.dialer.fm.MarshalFrame(f)
 			u.dialer.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
-			u.send_icmp(u.dialer.conn, mb, u.dialer.serveraddr)
+			u.send_icmp(u.dialer.conn, mb, u.dialer.serveraddr,
+				u.id, u.dialer.icmpId, u.dialer.icmpSeq, u.dialer.icmpProto, u.dialer.icmpFlag)
 		}
 
 		// recv udp
 		u.dialer.conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
-		n, _, _ := u.recv_icmp(u.dialer.conn, buf)
-		if n > 0 {
+		n, _, _, id, echoId, _, echoFlag := u.recv_icmp(u.dialer.conn, buf)
+		if n > 0 && id == u.id && echoId == u.dialer.icmpId && echoFlag == int(IcmpMsg_SERVER_SEND_FLAG) {
 			f := &frame.Frame{}
 			err := proto.Unmarshal(buf[0:n], f)
 			if err == nil {
@@ -368,7 +383,7 @@ func (c *ricmpConn) Listen(dst string) (Conn, error) {
 		accept:       ch,
 	}
 
-	u := &ricmpConn{config: c.config, listener: listener}
+	u := &ricmpConn{id: common.UniqueId(), config: c.config, listener: listener}
 	wg.Go("ricmpConn loopListenerRecv"+" "+dst, func() error {
 		return u.loopListenerRecv()
 	})
@@ -416,14 +431,12 @@ func (c *ricmpConn) loopListenerRecv() error {
 	buf := make([]byte, c.config.MaxPacketSize)
 	for !c.listener.wg.IsExit() {
 		c.listener.listenerconn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
-		n, srcaddr, err := c.recv_icmp(c.listener.listenerconn, buf)
+		n, srcaddr, err, cid, echoId, echoSeq, _ := c.recv_icmp(c.listener.listenerconn, buf)
 		if err != nil {
 			continue
 		}
 
-		srcaddrstr := srcaddr.String()
-
-		v, ok := c.listener.sonny.Load(srcaddrstr)
+		v, ok := c.listener.sonny.Load(cid)
 		if !ok {
 			id := common.Guid()
 			fm := frame.NewFrameMgr(c.config.CutSize, c.config.MaxId, c.config.BufferSize, c.config.MaxWin, c.config.ResendTimems, c.config.Compress, c.config.Stat)
@@ -432,14 +445,11 @@ func (c *ricmpConn) loopListenerRecv() error {
 				fm.SetCongestion(&congestion.BBCongestion{})
 			}
 
-			sonny := &ricmpConnListenerSonny{
-				dstaddr:    srcaddr,
-				fatherconn: c.listener.listenerconn,
-				fm:         fm,
-			}
+			sonny := &ricmpConnListenerSonny{dstaddr: srcaddr, fatherconn: c.listener.listenerconn, fm: fm,
+				icmpId: echoId, icmpSeq: echoSeq, icmpProto: int(IcmpMsg_PONG_PROTO), icmpFlag: IcmpMsg_SERVER_SEND_FLAG}
 
-			u := &ricmpConn{config: c.config, listenersonny: sonny}
-			c.listener.sonny.Store(srcaddrstr, u)
+			u := &ricmpConn{id: cid, config: c.config, listenersonny: sonny}
+			c.listener.sonny.Store(id, u)
 
 			c.listener.wg.Go("ricmpConn accept"+" "+u.Info(), func() error {
 				return c.accept(u)
@@ -448,6 +458,7 @@ func (c *ricmpConn) loopListenerRecv() error {
 			loggo.Debug("start accept remote ricmp %s %s", u.Info(), id)
 		} else {
 			u := v.(*ricmpConn)
+			u.listenersonny.icmpSeq = echoSeq
 
 			f := &frame.Frame{}
 			err := proto.Unmarshal(buf[0:n], f)
@@ -496,7 +507,8 @@ func (c *ricmpConn) accept(u *ricmpConn) error {
 				break
 			}
 			u.listenersonny.fatherconn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
-			u.send_icmp(u.listenersonny.fatherconn, mb, u.listenersonny.dstaddr)
+			u.send_icmp(u.listenersonny.fatherconn, mb, u.listenersonny.dstaddr,
+				u.id, u.listenersonny.icmpId, u.listenersonny.icmpSeq, u.listenersonny.icmpProto, u.listenersonny.icmpFlag)
 		}
 
 		now := time.Now()
@@ -537,14 +549,19 @@ func (c *ricmpConn) accept(u *ricmpConn) error {
 }
 
 func (c *ricmpConn) updateListenerSonny() error {
-	return c.update_ricmp(c.listenersonny.wg, c.listenersonny.fm, c.listenersonny.fatherconn, c.listenersonny.dstaddr, false)
+	return c.update_ricmp(c.listenersonny.wg, c.listenersonny.fm, c.listenersonny.fatherconn, c.listenersonny.dstaddr, false,
+		0, 0,
+		c.id, c.listenersonny.icmpId, c.listenersonny.icmpSeq, c.listenersonny.icmpProto, c.listenersonny.icmpFlag)
 }
 
 func (c *ricmpConn) updateDialerSonny() error {
-	return c.update_ricmp(c.dialer.wg, c.dialer.fm, c.dialer.conn, c.dialer.serveraddr, true)
+	return c.update_ricmp(c.dialer.wg, c.dialer.fm, c.dialer.conn, c.dialer.serveraddr, true,
+		c.dialer.icmpId, int(IcmpMsg_SERVER_SEND_FLAG),
+		c.id, c.dialer.icmpId, c.dialer.icmpSeq, c.dialer.icmpProto, c.dialer.icmpFlag)
 }
 
-func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp.PacketConn, dstaddr *net.IPAddr, readconn bool) error {
+func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp.PacketConn, dstaddr net.Addr, readconn bool,
+	recvCheckEchoId int, recvCheckEchoFlag int, id string, icmpId int, icmpSeq int, icmpProto int, icmpFlag IcmpMsg_TYPE) error {
 
 	loggo.Debug("start ricmp conn %s", c.Info())
 
@@ -556,8 +573,8 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 			for !wg.IsExit() && stage != "closewait" {
 				// recv udp
 				conn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
-				n, _, _ := c.recv_icmp(conn, bytes)
-				if n > 0 {
+				n, _, _, id, echoId, _, echoFlag := c.recv_icmp(conn, bytes)
+				if n > 0 && id == c.id && echoId == recvCheckEchoId && echoFlag == recvCheckEchoFlag {
 					f := &frame.Frame{}
 					err := proto.Unmarshal(bytes[0:n], f)
 					if err == nil {
@@ -589,7 +606,7 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 				return err
 			}
 			conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
-			c.send_icmp(conn, mb, dstaddr)
+			c.send_icmp(conn, mb, dstaddr, id, icmpId, icmpSeq, icmpProto, icmpFlag)
 			//loggo.Debug("%s send frame to %s %d", c.Info(), dstaddr, f.Id)
 		}
 
@@ -631,7 +648,7 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 				return err
 			}
 			conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
-			c.send_icmp(conn, mb, dstaddr)
+			c.send_icmp(conn, mb, dstaddr, id, icmpId, icmpSeq, icmpProto, icmpFlag)
 			//loggo.Debug("%s send frame to %s %d", c.Info(), dstaddr, f.Id)
 		}
 
@@ -676,11 +693,67 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 	return errors.New("closed " + reason)
 }
 
-func (c *ricmpConn) send_icmp(conn *icmp.PacketConn, data []byte, dst *net.IPAddr) {
-	// TODO
+func (c *ricmpConn) send_icmp(conn *icmp.PacketConn, data []byte, dst net.Addr, id string, icmpId int, icmpSeq int, icmpProto int, icmpFlag IcmpMsg_TYPE) {
+
+	m := &IcmpMsg{
+		Id:    id,
+		Data:  data,
+		Magic: IcmpMsg_MAGIC,
+		Flag:  icmpFlag,
+	}
+
+	mb, err := proto.Marshal(m)
+	if err != nil {
+		loggo.Error("sendICMP Marshal MyMsg error %s %s", c.Info(), err)
+		return
+	}
+
+	body := &icmp.Echo{
+		ID:   icmpId,
+		Seq:  icmpSeq,
+		Data: mb,
+	}
+
+	msg := &icmp.Message{
+		Type: (ipv4.ICMPType)(icmpProto),
+		Code: 0,
+		Body: body,
+	}
+
+	bytes, err := msg.Marshal(nil)
+	if err != nil {
+		loggo.Error("sendICMP Marshal error %s %s", c.Info(), err)
+		return
+	}
+
+	conn.WriteTo(bytes, dst)
 }
 
-func (c *ricmpConn) recv_icmp(conn *icmp.PacketConn, data []byte) (int, *net.IPAddr, error) {
-	// TODO
-	return 0, nil, nil
+func (c *ricmpConn) recv_icmp(conn *icmp.PacketConn, bytes []byte) (int, net.Addr, error, string, int, int, int) {
+	n, srcaddr, err := conn.ReadFrom(bytes)
+
+	if err != nil {
+		return 0, srcaddr, err, "", 0, 0, 0
+	}
+
+	if n <= 0 {
+		return 0, srcaddr, errors.New("n <= 0"), "", 0, 0, 0
+	}
+
+	echoId := int(binary.BigEndian.Uint16(bytes[4:6]))
+	echoSeq := int(binary.BigEndian.Uint16(bytes[6:8]))
+
+	my := &IcmpMsg{}
+	err = proto.Unmarshal(bytes[8:n], my)
+	if err != nil {
+		return 0, srcaddr, err, "", 0, 0, 0
+	}
+
+	if my.Magic != IcmpMsg_MAGIC {
+		return 0, srcaddr, errors.New("magic error"), "", 0, 0, 0
+	}
+
+	copy(bytes, my.Data)
+
+	return len(my.Data), srcaddr, nil, my.Id, echoId, echoSeq, int(my.Flag)
 }
