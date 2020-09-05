@@ -387,13 +387,13 @@ func Test0008RICMP(t *testing.T) {
 		start := time.Now()
 		speed := 0
 		for {
-			fmt.Println("start Write")
+			//fmt.Println("start Write")
 			_, err := cc.Write(data)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
-			fmt.Println("end Write")
+			//fmt.Println("end Write")
 			speed += len(data)
 			if time.Now().Sub(start) > time.Second {
 				speed = speed / 1024 / 1024
@@ -417,14 +417,14 @@ func Test0008RICMP(t *testing.T) {
 		start := time.Now()
 		speed := 0
 		for {
-			fmt.Println("start Read")
+			//fmt.Println("start Read")
 			n, err := ccc.Read(buf)
 			if err != nil {
 				fmt.Println(err)
 				fmt.Println("Read done")
 				return
 			}
-			fmt.Println("end Read")
+			//fmt.Println("end Read")
 			speed += n
 			if time.Now().Sub(start) > time.Second {
 				speed = speed / 1024 / 1024

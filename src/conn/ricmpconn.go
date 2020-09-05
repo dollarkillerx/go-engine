@@ -432,8 +432,8 @@ func (c *ricmpConn) loopListenerRecv() error {
 	buf := make([]byte, c.config.MaxPacketSize)
 	for !c.listener.wg.IsExit() {
 		c.listener.listenerconn.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
-		n, srcaddr, err, cid, echoId, echoSeq, _ := c.recv_icmp(c.listener.listenerconn, buf)
-		if err != nil {
+		n, srcaddr, err, cid, echoId, echoSeq, echoFlag := c.recv_icmp(c.listener.listenerconn, buf)
+		if err != nil || echoFlag != int(IcmpMsg_CLIENT_SEND_FLAG) {
 			continue
 		}
 
