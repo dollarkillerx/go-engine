@@ -443,3 +443,84 @@ func Test0008RICMP(t *testing.T) {
 
 	time.Sleep(time.Second)
 }
+
+func Test0009RICMP(t *testing.T) {
+	c, err := NewConn("ricmp")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	cc, err := c.Listen("127.0.0.1")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	go func() {
+		cc, err := cc.Accept()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println("accept done")
+		buf := make([]byte, 1024*1024)
+		start := time.Now()
+		speed := 0
+		for {
+			//fmt.Println("start Read")
+			n, err := cc.Read(buf)
+			if err != nil {
+				fmt.Println(err)
+				fmt.Println("Read done")
+				return
+			}
+			//fmt.Println("end Read")
+			speed += n
+			if time.Now().Sub(start) > time.Second {
+				speed = speed / 1024 / 1024
+				loggo.Info("read speed %v MB per second", float64(speed)/float64(time.Now().Sub(start)/time.Second))
+				speed = 0
+				start = time.Now()
+			}
+		}
+		fmt.Println("write done")
+	}()
+
+	ccc, err := c.Dial("127.0.0.1")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	go func() {
+		fmt.Println("start client")
+		data := make([]byte, 1024*1024)
+		start := time.Now()
+		speed := 0
+		for {
+			//fmt.Println("start Write")
+			_, err := ccc.Write(data)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			//fmt.Println("end Write")
+			speed += len(data)
+			if time.Now().Sub(start) > time.Second {
+				speed = speed / 1024 / 1024
+				loggo.Info("write speed %v MB per second", float64(speed)/float64(time.Now().Sub(start)/time.Second))
+				speed = 0
+				start = time.Now()
+			}
+		}
+		fmt.Println("write done")
+	}()
+
+	time.Sleep(time.Second * 60)
+
+	cc.Close()
+	ccc.Close()
+
+	time.Sleep(time.Second)
+}
