@@ -7,7 +7,6 @@ import (
 	"github.com/esrrhs/go-engine/src/congestion"
 	"github.com/esrrhs/go-engine/src/frame"
 	"github.com/esrrhs/go-engine/src/group"
-	"github.com/esrrhs/go-engine/src/loggo"
 	"github.com/golang/protobuf/proto"
 	"net"
 	"sync"
@@ -191,14 +190,14 @@ func (c *rudpConn) Close() error {
 	c.closelock.Lock()
 	defer c.closelock.Unlock()
 
-	loggo.Debug("start Close %s", c.Info())
+	//loggo.Debug("start Close %s", c.Info())
 
 	if c.cancel != nil {
 		c.cancel()
 	}
 	if c.dialer != nil {
 		if c.dialer.wg != nil {
-			loggo.Debug("start Close dialer %s", c.Info())
+			//loggo.Debug("start Close dialer %s", c.Info())
 			c.dialer.wg.Stop()
 			c.dialer.wg.Wait()
 		}
@@ -207,7 +206,7 @@ func (c *rudpConn) Close() error {
 		}
 	} else if c.listener != nil {
 		if c.listener.wg != nil {
-			loggo.Debug("start Close listener %s", c.Info())
+			//loggo.Debug("start Close listener %s", c.Info())
 			c.listener.wg.Stop()
 			c.listener.sonny.Range(func(key, value interface{}) bool {
 				u := value.(*rudpConn)
@@ -221,14 +220,14 @@ func (c *rudpConn) Close() error {
 		}
 	} else if c.listenersonny != nil {
 		if c.listenersonny.wg != nil {
-			loggo.Debug("start Close listenersonny %s", c.Info())
+			//loggo.Debug("start Close listenersonny %s", c.Info())
 			c.listenersonny.wg.Stop()
 			c.listenersonny.wg.Wait()
 		}
 	}
 	c.isclose = true
 
-	loggo.Debug("Close ok %s", c.Info())
+	//loggo.Debug("Close ok %s", c.Info())
 
 	return nil
 }
@@ -278,7 +277,7 @@ func (c *rudpConn) Dial(dst string) (Conn, error) {
 
 	u := &rudpConn{config: c.config, dialer: dialer}
 
-	loggo.Debug("start connect remote rudp %s %s", u.Info(), id)
+	//loggo.Debug("start connect remote rudp %s %s", u.Info(), id)
 
 	u.dialer.fm.Connect()
 
@@ -309,13 +308,13 @@ func (c *rudpConn) Dial(dst string) (Conn, error) {
 			if err == nil {
 				u.dialer.fm.OnRecvFrame(f)
 			} else {
-				loggo.Error("%s %s Unmarshal fail %s", c.Info(), u.Info(), err)
+				//loggo.Error("%s %s Unmarshal fail %s", c.Info(), u.Info(), err)
 				break
 			}
 		}
 
 		if c.isclose {
-			loggo.Debug("can not connect remote rudp %s", u.Info())
+			//loggo.Debug("can not connect remote rudp %s", u.Info())
 			break
 		}
 
@@ -323,7 +322,7 @@ func (c *rudpConn) Dial(dst string) (Conn, error) {
 		now := time.Now()
 		diffclose := now.Sub(startConnectTime)
 		if diffclose > time.Millisecond*time.Duration(c.config.ConnectTimeoutMs) {
-			loggo.Debug("can not connect remote rudp %s", u.Info())
+			//loggo.Debug("can not connect remote rudp %s", u.Info())
 			break
 		}
 
@@ -343,7 +342,7 @@ func (c *rudpConn) Dial(dst string) (Conn, error) {
 		return nil, errors.New("connect timeout")
 	}
 
-	loggo.Debug("connect remote ok rudp %s", u.Info())
+	//loggo.Debug("connect remote ok rudp %s", u.Info())
 
 	wg := group.NewGroup("rudpConn serveListenerSonny"+" "+u.Info(), nil, nil)
 
@@ -456,7 +455,7 @@ func (c *rudpConn) loopListenerRecv() error {
 				return c.accept(u)
 			})
 
-			loggo.Debug("start accept remote rudp %s %s", u.Info(), id)
+			//loggo.Debug("start accept remote rudp %s %s", u.Info(), id)
 		} else {
 			u := v.(*rudpConn)
 
@@ -466,7 +465,7 @@ func (c *rudpConn) loopListenerRecv() error {
 				u.listenersonny.fm.OnRecvFrame(f)
 				//loggo.Debug("%s recv frame %d", u.Info(), f.Id)
 			} else {
-				loggo.Error("%s %s Unmarshal fail %s", c.Info(), u.Info(), err)
+				//loggo.Error("%s %s Unmarshal fail %s", c.Info(), u.Info(), err)
 			}
 		}
 
@@ -474,7 +473,7 @@ func (c *rudpConn) loopListenerRecv() error {
 			u := value.(*rudpConn)
 			if u.isclose {
 				c.listener.sonny.Delete(key)
-				loggo.Debug("delete sonny from map %s", u.Info())
+				//loggo.Debug("delete sonny from map %s", u.Info())
 			}
 			return true
 		})
@@ -484,7 +483,7 @@ func (c *rudpConn) loopListenerRecv() error {
 
 func (c *rudpConn) accept(u *rudpConn) error {
 
-	loggo.Debug("server begin accept rudp %s", u.Info())
+	//loggo.Debug("server begin accept rudp %s", u.Info())
 
 	startConnectTime := time.Now()
 	done := false
@@ -503,7 +502,7 @@ func (c *rudpConn) accept(u *rudpConn) error {
 			f := e.Value.(*frame.Frame)
 			mb, err := u.listenersonny.fm.MarshalFrame(f)
 			if err != nil {
-				loggo.Error("MarshalFrame fail %s", err)
+				//loggo.Error("MarshalFrame fail %s", err)
 				break
 			}
 			u.listenersonny.fatherconn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
@@ -513,7 +512,7 @@ func (c *rudpConn) accept(u *rudpConn) error {
 		now := time.Now()
 		diffclose := now.Sub(startConnectTime)
 		if diffclose > time.Millisecond*time.Duration(c.config.ConnectTimeoutMs) {
-			loggo.Debug("can not connect by remote rudp %s", u.Info())
+			//loggo.Debug("can not connect by remote rudp %s", u.Info())
 			break
 		}
 
@@ -530,7 +529,7 @@ func (c *rudpConn) accept(u *rudpConn) error {
 		return nil
 	}
 
-	loggo.Debug("server accept rudp ok %s", u.Info())
+	//loggo.Debug("server accept rudp ok %s", u.Info())
 
 	c.listener.accept.Write(u)
 
@@ -542,7 +541,7 @@ func (c *rudpConn) accept(u *rudpConn) error {
 		return u.updateListenerSonny()
 	})
 
-	loggo.Debug("accept rudp finish %s", u.Info())
+	//loggo.Debug("accept rudp finish %s", u.Info())
 
 	return nil
 }
@@ -557,7 +556,7 @@ func (c *rudpConn) updateDialerSonny() error {
 
 func (c *rudpConn) update_rudp(wg *group.Group, fm *frame.FrameMgr, conn *net.UDPConn, dstaddr *net.UDPAddr, readconn bool) error {
 
-	loggo.Debug("start rudp conn %s", c.Info())
+	//loggo.Debug("start rudp conn %s", c.Info())
 
 	stage := "open"
 
@@ -575,7 +574,7 @@ func (c *rudpConn) update_rudp(wg *group.Group, fm *frame.FrameMgr, conn *net.UD
 						fm.OnRecvFrame(f)
 						//loggo.Debug("%s recv frame %d", c.Info(), f.Id)
 					} else {
-						loggo.Error("Unmarshal fail from %s %s", c.Info(), err)
+						//loggo.Error("Unmarshal fail from %s %s", c.Info(), err)
 					}
 				}
 			}
@@ -596,7 +595,7 @@ func (c *rudpConn) update_rudp(wg *group.Group, fm *frame.FrameMgr, conn *net.UD
 			f := e.Value.(*frame.Frame)
 			mb, err := fm.MarshalFrame(f)
 			if err != nil {
-				loggo.Error("MarshalFrame fail %s", err)
+				//loggo.Error("MarshalFrame fail %s", err)
 				return err
 			}
 			conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
@@ -612,13 +611,13 @@ func (c *rudpConn) update_rudp(wg *group.Group, fm *frame.FrameMgr, conn *net.UD
 		// timeout
 		if fm.IsHBTimeout() {
 			reason = "HBTimeout"
-			loggo.Debug("close inactive conn %s", c.Info())
+			//loggo.Debug("close inactive conn %s", c.Info())
 			break
 		}
 
 		if fm.IsRemoteClosed() {
 			reason = "RemoteClose"
-			loggo.Debug("closed by remote conn %s", c.Info())
+			//loggo.Debug("closed by remote conn %s", c.Info())
 			break
 		}
 
@@ -629,7 +628,7 @@ func (c *rudpConn) update_rudp(wg *group.Group, fm *frame.FrameMgr, conn *net.UD
 
 	stage = "close"
 	fm.Close()
-	loggo.Debug("close rudp conn fm %s", c.Info())
+	//loggo.Debug("close rudp conn fm %s", c.Info())
 
 	startCloseTime := time.Now()
 	for !wg.IsExit() {
@@ -643,7 +642,7 @@ func (c *rudpConn) update_rudp(wg *group.Group, fm *frame.FrameMgr, conn *net.UD
 			f := e.Value.(*frame.Frame)
 			mb, err := fm.MarshalFrame(f)
 			if err != nil {
-				loggo.Error("MarshalFrame fail %s", err)
+				//loggo.Error("MarshalFrame fail %s", err)
 				return err
 			}
 			conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
@@ -658,13 +657,13 @@ func (c *rudpConn) update_rudp(wg *group.Group, fm *frame.FrameMgr, conn *net.UD
 
 		diffclose := now.Sub(startCloseTime)
 		if diffclose > time.Millisecond*time.Duration(c.config.CloseTimeoutMs) {
-			loggo.Debug("close conn had timeout %s", c.Info())
+			//loggo.Debug("close conn had timeout %s", c.Info())
 			break
 		}
 
 		remoteclosed := fm.IsRemoteClosed()
 		if remoteclosed {
-			loggo.Debug("remote conn had closed %s", c.Info())
+			//loggo.Debug("remote conn had closed %s", c.Info())
 			break
 		}
 
@@ -672,7 +671,7 @@ func (c *rudpConn) update_rudp(wg *group.Group, fm *frame.FrameMgr, conn *net.UD
 	}
 
 	stage = "closewait"
-	loggo.Debug("close rudp conn update %s", c.Info())
+	//loggo.Debug("close rudp conn update %s", c.Info())
 
 	startEndTime := time.Now()
 	for !wg.IsExit() {
@@ -680,19 +679,19 @@ func (c *rudpConn) update_rudp(wg *group.Group, fm *frame.FrameMgr, conn *net.UD
 
 		diffclose := now.Sub(startEndTime)
 		if diffclose > time.Millisecond*time.Duration(c.config.CloseWaitTimeoutMs) {
-			loggo.Debug("close wait conn had timeout %s", c.Info())
+			//loggo.Debug("close wait conn had timeout %s", c.Info())
 			break
 		}
 
 		if fm.GetRecvBufferSize() <= 0 {
-			loggo.Debug("conn had no data %s", c.Info())
+			//loggo.Debug("conn had no data %s", c.Info())
 			break
 		}
 
 		time.Sleep(time.Millisecond * 10)
 	}
 
-	loggo.Debug("close rudp conn %s", c.Info())
+	//loggo.Debug("close rudp conn %s", c.Info())
 
 	return errors.New("closed " + reason)
 }

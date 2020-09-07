@@ -7,7 +7,6 @@ import (
 	"github.com/esrrhs/go-engine/src/congestion"
 	"github.com/esrrhs/go-engine/src/frame"
 	"github.com/esrrhs/go-engine/src/group"
-	"github.com/esrrhs/go-engine/src/loggo"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/icmp"
 	"golang.org/x/net/ipv4"
@@ -204,11 +203,11 @@ func (c *ricmpConn) Close() error {
 	c.closelock.Lock()
 	defer c.closelock.Unlock()
 
-	loggo.Debug("start Close %s", c.Info())
+	//loggo.Debug("start Close %s", c.Info())
 
 	if c.dialer != nil {
 		if c.dialer.wg != nil {
-			loggo.Debug("start Close dialer %s", c.Info())
+			//loggo.Debug("start Close dialer %s", c.Info())
 			c.dialer.wg.Stop()
 			c.dialer.wg.Wait()
 		}
@@ -217,7 +216,7 @@ func (c *ricmpConn) Close() error {
 		}
 	} else if c.listener != nil {
 		if c.listener.wg != nil {
-			loggo.Debug("start Close listener %s", c.Info())
+			//loggo.Debug("start Close listener %s", c.Info())
 			c.listener.wg.Stop()
 			c.listener.sonny.Range(func(key, value interface{}) bool {
 				u := value.(*ricmpConn)
@@ -231,14 +230,14 @@ func (c *ricmpConn) Close() error {
 		}
 	} else if c.listenersonny != nil {
 		if c.listenersonny.wg != nil {
-			loggo.Debug("start Close listenersonny %s", c.Info())
+			//loggo.Debug("start Close listenersonny %s", c.Info())
 			c.listenersonny.wg.Stop()
 			c.listenersonny.wg.Wait()
 		}
 	}
 	c.isclose = true
 
-	loggo.Debug("Close ok %s", c.Info())
+	//loggo.Debug("Close ok %s", c.Info())
 
 	return nil
 }
@@ -286,7 +285,7 @@ func (c *ricmpConn) Dial(dst string) (Conn, error) {
 
 	u := &ricmpConn{id: id, config: c.config, dialer: dialer}
 
-	loggo.Debug("start connect remote ricmp %s %s", u.Info(), id)
+	//loggo.Debug("start connect remote ricmp %s %s", u.Info(), id)
 
 	u.dialer.fm.Connect()
 
@@ -319,13 +318,13 @@ func (c *ricmpConn) Dial(dst string) (Conn, error) {
 			if err == nil {
 				u.dialer.fm.OnRecvFrame(f)
 			} else {
-				loggo.Error("%s %s Unmarshal fail %s", c.Info(), u.Info(), err)
+				//loggo.Error("%s %s Unmarshal fail %s", c.Info(), u.Info(), err)
 				break
 			}
 		}
 
 		if c.isclose {
-			loggo.Debug("can not connect remote ricmp %s", u.Info())
+			//loggo.Debug("can not connect remote ricmp %s", u.Info())
 			break
 		}
 
@@ -333,7 +332,7 @@ func (c *ricmpConn) Dial(dst string) (Conn, error) {
 		now := time.Now()
 		diffclose := now.Sub(startConnectTime)
 		if diffclose > time.Millisecond*time.Duration(c.config.ConnectTimeoutMs) {
-			loggo.Debug("can not connect remote ricmp %s", u.Info())
+			//loggo.Debug("can not connect remote ricmp %s", u.Info())
 			break
 		}
 
@@ -353,7 +352,7 @@ func (c *ricmpConn) Dial(dst string) (Conn, error) {
 		return nil, errors.New("connect timeout")
 	}
 
-	loggo.Debug("connect remote ok ricmp %s", u.Info())
+	//loggo.Debug("connect remote ok ricmp %s", u.Info())
 
 	wg := group.NewGroup("ricmpConn serveListenerSonny"+" "+u.Info(), nil, nil)
 
@@ -455,7 +454,7 @@ func (c *ricmpConn) loopListenerRecv() error {
 				return c.accept(u)
 			})
 
-			loggo.Debug("start accept remote ricmp %s %s", u.Info(), cid)
+			//loggo.Debug("start accept remote ricmp %s %s", u.Info(), cid)
 		} else {
 			u := v.(*ricmpConn)
 			u.listenersonny.icmpSeq = echoSeq
@@ -466,7 +465,7 @@ func (c *ricmpConn) loopListenerRecv() error {
 				u.listenersonny.fm.OnRecvFrame(f)
 				//loggo.Debug("%s recv frame %d %v", u.Info(), f.Id, f.String())
 			} else {
-				loggo.Error("%s %s Unmarshal fail %s", c.Info(), u.Info(), err)
+				//loggo.Error("%s %s Unmarshal fail %s", c.Info(), u.Info(), err)
 			}
 		}
 
@@ -474,7 +473,7 @@ func (c *ricmpConn) loopListenerRecv() error {
 			u := value.(*ricmpConn)
 			if u.isclose {
 				c.listener.sonny.Delete(key)
-				loggo.Debug("delete sonny from map %s", u.Info())
+				//loggo.Debug("delete sonny from map %s", u.Info())
 			}
 			return true
 		})
@@ -484,7 +483,7 @@ func (c *ricmpConn) loopListenerRecv() error {
 
 func (c *ricmpConn) accept(u *ricmpConn) error {
 
-	loggo.Debug("server begin accept ricmp %s", u.Info())
+	//loggo.Debug("server begin accept ricmp %s", u.Info())
 
 	startConnectTime := time.Now()
 	done := false
@@ -503,7 +502,7 @@ func (c *ricmpConn) accept(u *ricmpConn) error {
 			f := e.Value.(*frame.Frame)
 			mb, err := u.listenersonny.fm.MarshalFrame(f)
 			if err != nil {
-				loggo.Error("MarshalFrame fail %s", err)
+				//loggo.Error("MarshalFrame fail %s", err)
 				break
 			}
 			u.listenersonny.fatherconn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
@@ -514,7 +513,7 @@ func (c *ricmpConn) accept(u *ricmpConn) error {
 		now := time.Now()
 		diffclose := now.Sub(startConnectTime)
 		if diffclose > time.Millisecond*time.Duration(c.config.ConnectTimeoutMs) {
-			loggo.Debug("can not connect by remote ricmp %s", u.Info())
+			//loggo.Debug("can not connect by remote ricmp %s", u.Info())
 			break
 		}
 
@@ -531,7 +530,7 @@ func (c *ricmpConn) accept(u *ricmpConn) error {
 		return nil
 	}
 
-	loggo.Debug("server accept ricmp ok %s", u.Info())
+	//loggo.Debug("server accept ricmp ok %s", u.Info())
 
 	c.listener.accept.Write(u)
 
@@ -543,7 +542,7 @@ func (c *ricmpConn) accept(u *ricmpConn) error {
 		return u.updateListenerSonny()
 	})
 
-	loggo.Debug("accept ricmp finish %s", u.Info())
+	//loggo.Debug("accept ricmp finish %s", u.Info())
 
 	return nil
 }
@@ -565,7 +564,7 @@ func (c *ricmpConn) updateDialerSonny() error {
 func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp.PacketConn, dstaddr net.Addr, readconn bool,
 	recvCheckEchoId int, recvCheckEchoFlag int, id string, icmpId int, icmpSeq int, icmpProto int, icmpFlag IcmpMsg_TYPE, addIcmpSeq *int) error {
 
-	loggo.Debug("start ricmp conn %s", c.Info())
+	//loggo.Debug("start ricmp conn %s", c.Info())
 
 	stage := "open"
 
@@ -583,7 +582,7 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 						fm.OnRecvFrame(f)
 						//loggo.Debug("%s recv frame %d %v", c.Info(), f.Id, f.String())
 					} else {
-						loggo.Error("Unmarshal fail from %s %s", c.Info(), err)
+						//loggo.Error("Unmarshal fail from %s %s", c.Info(), err)
 					}
 				}
 			}
@@ -604,7 +603,7 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 			f := e.Value.(*frame.Frame)
 			mb, err := fm.MarshalFrame(f)
 			if err != nil {
-				loggo.Error("MarshalFrame fail %s", err)
+				//loggo.Error("MarshalFrame fail %s", err)
 				return err
 			}
 			conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
@@ -618,13 +617,13 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 		// timeout
 		if fm.IsHBTimeout() {
 			reason = "HBTimeout"
-			loggo.Debug("close inactive conn %s", c.Info())
+			//loggo.Debug("close inactive conn %s", c.Info())
 			break
 		}
 
 		if fm.IsRemoteClosed() {
 			reason = "RemoteClose"
-			loggo.Debug("closed by remote conn %s", c.Info())
+			//loggo.Debug("closed by remote conn %s", c.Info())
 			break
 		}
 
@@ -635,7 +634,7 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 
 	stage = "close"
 	fm.Close()
-	loggo.Debug("close ricmp conn fm %s", c.Info())
+	//loggo.Debug("close ricmp conn fm %s", c.Info())
 
 	startCloseTime := time.Now()
 	for !wg.IsExit() {
@@ -649,7 +648,7 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 			f := e.Value.(*frame.Frame)
 			mb, err := fm.MarshalFrame(f)
 			if err != nil {
-				loggo.Error("MarshalFrame fail %s", err)
+				//loggo.Error("MarshalFrame fail %s", err)
 				return err
 			}
 			conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
@@ -662,13 +661,13 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 
 		diffclose := now.Sub(startCloseTime)
 		if diffclose > time.Millisecond*time.Duration(c.config.CloseTimeoutMs) {
-			loggo.Debug("close conn had timeout %s", c.Info())
+			//loggo.Debug("close conn had timeout %s", c.Info())
 			break
 		}
 
 		remoteclosed := fm.IsRemoteClosed()
 		if remoteclosed {
-			loggo.Debug("remote conn had closed %s", c.Info())
+			//loggo.Debug("remote conn had closed %s", c.Info())
 			break
 		}
 
@@ -676,7 +675,7 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 	}
 
 	stage = "closewait"
-	loggo.Debug("close ricmp conn update %s", c.Info())
+	//loggo.Debug("close ricmp conn update %s", c.Info())
 
 	startEndTime := time.Now()
 	for !wg.IsExit() {
@@ -684,19 +683,19 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 
 		diffclose := now.Sub(startEndTime)
 		if diffclose > time.Millisecond*time.Duration(c.config.CloseWaitTimeoutMs) {
-			loggo.Debug("close wait conn had timeout %s", c.Info())
+			//loggo.Debug("close wait conn had timeout %s", c.Info())
 			break
 		}
 
 		if fm.GetRecvBufferSize() <= 0 {
-			loggo.Debug("conn had no data %s", c.Info())
+			//loggo.Debug("conn had no data %s", c.Info())
 			break
 		}
 
 		time.Sleep(time.Millisecond * 10)
 	}
 
-	loggo.Debug("close ricmp conn %s", c.Info())
+	//loggo.Debug("close ricmp conn %s", c.Info())
 
 	return errors.New("closed " + reason)
 }
@@ -712,7 +711,7 @@ func (c *ricmpConn) send_icmp(conn *icmp.PacketConn, data []byte, dst net.Addr, 
 
 	mb, err := proto.Marshal(m)
 	if err != nil {
-		loggo.Error("sendICMP Marshal MyMsg error %s %s", c.Info(), err)
+		//loggo.Error("sendICMP Marshal MyMsg error %s %s", c.Info(), err)
 		return
 	}
 
@@ -730,7 +729,7 @@ func (c *ricmpConn) send_icmp(conn *icmp.PacketConn, data []byte, dst net.Addr, 
 
 	bytes, err := msg.Marshal(nil)
 	if err != nil {
-		loggo.Error("sendICMP Marshal error %s %s", c.Info(), err)
+		//loggo.Error("sendICMP Marshal error %s %s", c.Info(), err)
 		return
 	}
 
