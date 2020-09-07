@@ -12,12 +12,12 @@ const (
 	bbc_status_init = 0
 	bbc_status_prop = 1
 
-	bbc_win            = 4
+	bbc_win            = 5
 	bbc_maxfly_grow    = 2.1
 	bbc_maxfly_compare = float64(1.5)
 )
 
-var prop_seq = []float64{1, 1, 1.3, 0.7}
+var prop_seq = []float64{1, 1, 1.5, 1}
 
 type BBCongestion struct {
 	status        int
