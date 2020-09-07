@@ -59,15 +59,15 @@ func (bb *BBCongestion) Update() {
 		return
 	}
 
-	rate := float64(bb.maxfly) / float64(bb.flyeddata)
-	if rate < 1 {
-		rate = 1
+	currate := float64(bb.flyingdata) / float64(bb.flyeddata)
+	if currate < 1 {
+		currate = 1
 	}
 
 	if bb.rateflywin.Full() {
 		bb.rateflywin.PopFront()
 	}
-	bb.rateflywin.PushBack(rate)
+	bb.rateflywin.PushBack(currate)
 
 	lastratewin := math.MaxFloat64
 	for e := bb.rateflywin.FrontInter(); e != nil; e = e.Next() {
@@ -84,9 +84,9 @@ func (bb *BBCongestion) Update() {
 
 	lastflyedwin := 0
 	for e := bb.flyedwin.FrontInter(); e != nil; e = e.Next() {
-		flyedwin := e.Value.(int)
-		if flyedwin > lastflyedwin {
-			lastflyedwin = flyedwin
+		flyed := e.Value.(int)
+		if flyed > lastflyedwin {
+			lastflyedwin = flyed
 		}
 	}
 
