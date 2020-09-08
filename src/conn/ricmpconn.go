@@ -550,19 +550,19 @@ func (c *ricmpConn) accept(u *ricmpConn) error {
 func (c *ricmpConn) updateListenerSonny() error {
 	return c.update_ricmp(c.listenersonny.wg, c.listenersonny.fm, c.listenersonny.fatherconn, c.listenersonny.dstaddr, false,
 		0, 0,
-		c.id, c.listenersonny.icmpId, c.listenersonny.icmpSeq, c.listenersonny.icmpProto, c.listenersonny.icmpFlag,
-		nil)
+		c.id, c.listenersonny.icmpId, &c.listenersonny.icmpSeq, c.listenersonny.icmpProto, c.listenersonny.icmpFlag,
+		false)
 }
 
 func (c *ricmpConn) updateDialerSonny() error {
 	return c.update_ricmp(c.dialer.wg, c.dialer.fm, c.dialer.conn, c.dialer.serveraddr, true,
 		c.dialer.icmpId, int(IcmpMsg_SERVER_SEND_FLAG),
-		c.id, c.dialer.icmpId, c.dialer.icmpSeq, c.dialer.icmpProto, c.dialer.icmpFlag,
-		&c.dialer.icmpSeq)
+		c.id, c.dialer.icmpId, &c.dialer.icmpSeq, c.dialer.icmpProto, c.dialer.icmpFlag,
+		true)
 }
 
 func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp.PacketConn, dstaddr net.Addr, readconn bool,
-	recvCheckEchoId int, recvCheckEchoFlag int, id string, icmpId int, icmpSeq int, icmpProto int, icmpFlag IcmpMsg_TYPE, addIcmpSeq *int) error {
+	recvCheckEchoId int, recvCheckEchoFlag int, id string, icmpId int, icmpSeq *int, icmpProto int, icmpFlag IcmpMsg_TYPE, addIcmpSeq bool) error {
 
 	//loggo.Debug("start ricmp conn %s", c.Info())
 
@@ -607,9 +607,9 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 				return err
 			}
 			conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
-			c.send_icmp(conn, mb, dstaddr, id, icmpId, icmpSeq, icmpProto, icmpFlag)
-			if addIcmpSeq != nil {
-				*addIcmpSeq++
+			c.send_icmp(conn, mb, dstaddr, id, icmpId, *icmpSeq, icmpProto, icmpFlag)
+			if addIcmpSeq {
+				*icmpSeq++
 			}
 			//loggo.Debug("%s send frame to %s %d %v", c.Info(), dstaddr, f.Id, f.String())
 		}
@@ -652,9 +652,9 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 				return err
 			}
 			conn.SetWriteDeadline(time.Now().Add(time.Millisecond * 100))
-			c.send_icmp(conn, mb, dstaddr, id, icmpId, icmpSeq, icmpProto, icmpFlag)
-			if addIcmpSeq != nil {
-				*addIcmpSeq++
+			c.send_icmp(conn, mb, dstaddr, id, icmpId, *icmpSeq, icmpProto, icmpFlag)
+			if addIcmpSeq {
+				*icmpSeq++
 			}
 			//loggo.Debug("%s send frame to %s %d", c.Info(), dstaddr, f.Id)
 		}
