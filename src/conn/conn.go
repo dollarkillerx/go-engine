@@ -30,6 +30,8 @@ func NewConn(proto string) (Conn, error) {
 		return &rudpConn{}, nil
 	} else if proto == "ricmp" {
 		return &ricmpConn{id: common.UniqueId()}, nil
+	} else if proto == "kcp" {
+		return &kcpConn{}, nil
 	}
 	return nil, errors.New("undefined proto " + proto)
 }
