@@ -48,7 +48,7 @@ func (o *Outputer) processDataFrame(f *ProxyFrame) {
 	id := f.DataFrame.Id
 	v, ok := o.sonny.Load(id)
 	if !ok {
-		loggo.Info("Outputer processDataFrame no sonnny %s %d", f.DataFrame.Id, len(f.DataFrame.Data))
+		loggo.Debug("Outputer processDataFrame no sonnny %s %d", f.DataFrame.Id, len(f.DataFrame.Data))
 		return
 	}
 	sonny := v.(*ProxyConn)

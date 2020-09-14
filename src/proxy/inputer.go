@@ -95,7 +95,7 @@ func (i *Inputer) processDataFrame(f *ProxyFrame) {
 	id := f.DataFrame.Id
 	v, ok := i.sonny.Load(id)
 	if !ok {
-		loggo.Info("Inputer processDataFrame no sonnny %s %d", id, len(f.DataFrame.Data))
+		loggo.Debug("Inputer processDataFrame no sonnny %s %d", id, len(f.DataFrame.Data))
 		return
 	}
 	sonny := v.(*ProxyConn)
