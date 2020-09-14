@@ -198,7 +198,9 @@ func (c *Client) login(index int, sendch *common.Channel) {
 	f.LoginFrame.Proxyproto = c.proxyproto[index]
 	f.LoginFrame.Clienttype = c.clienttype
 	f.LoginFrame.Fromaddr = c.fromaddr[index]
-	f.LoginFrame.Toaddr = c.toaddr[index]
+	if len(c.toaddr) > 0 {
+		f.LoginFrame.Toaddr = c.toaddr[index]
+	}
 	f.LoginFrame.Name = c.name + "_" + strconv.Itoa(index)
 	f.LoginFrame.Key = c.config.Key
 
