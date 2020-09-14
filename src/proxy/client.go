@@ -80,7 +80,11 @@ func NewClient(config *Config, serverproto string, server string, name string, c
 
 	for i, _ := range proxyprotostr {
 		index := i
-		wg.Go("Client connect"+" "+fromaddr[i]+" "+toaddr[i], func() error {
+		toaddrstr := ""
+		if len(toaddr) > 0 {
+			toaddrstr = toaddr[i]
+		}
+		wg.Go("Client connect"+" "+fromaddr[i]+" "+toaddrstr, func() error {
 			atomic.AddInt32(&gStateThreadNum.ThreadNum, 1)
 			defer atomic.AddInt32(&gStateThreadNum.ThreadNum, -1)
 			return c.connect(index, cn)
