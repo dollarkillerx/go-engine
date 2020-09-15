@@ -116,6 +116,10 @@ func (bb *BBCongestion) Update() {
 	bb.flyingdata = 0
 	bb.lastratewin = lastratewin
 	bb.lastflyedwin = lastflyedwin
+
+	if bb.maxfly < 1024*1024 {
+		bb.maxfly = 1024 * 1024
+	}
 }
 
 func (bb *BBCongestion) Info() string {
