@@ -6,6 +6,7 @@ enum PROXY_PROTO {
     UDP = 1;
     RUDP = 2;
     RICMP = 3;
+    KCP = 4;
 }
 
 enum CLIENT_TYPE {
