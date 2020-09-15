@@ -3,6 +3,7 @@ package conn
 import (
 	"errors"
 	"github.com/xtaci/kcp-go"
+	"time"
 )
 
 type kcpConn struct {
@@ -59,9 +60,10 @@ func (c *kcpConn) Dial(dst string) (Conn, error) {
 	}
 
 	// kcp client如果不发包，server无法accept
-	conn.(*kcp.UDPSession).Write([]byte("hello"))
-	conn.(*kcp.UDPSession).Write([]byte("hello"))
-	conn.(*kcp.UDPSession).Write([]byte("hello"))
+	last := time.Now()
+	for time.Now().Sub(last) < time.Second {
+		conn.(*kcp.UDPSession).Write([]byte("hello"))
+	}
 
 	c.setParam(conn.(*kcp.UDPSession))
 
