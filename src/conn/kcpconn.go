@@ -61,8 +61,12 @@ func (c *kcpConn) Dial(dst string) (Conn, error) {
 
 	// kcp client如果不发包，server无法accept
 	last := time.Now()
-	for time.Now().Sub(last) < time.Second {
+	for {
 		conn.(*kcp.UDPSession).Write([]byte("hello"))
+		time.Sleep(time.Millisecond)
+		if time.Now().Sub(last) > time.Second {
+			break
+		}
 	}
 
 	c.setParam(conn.(*kcp.UDPSession))
