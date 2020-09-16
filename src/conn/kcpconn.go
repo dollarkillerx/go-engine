@@ -3,11 +3,12 @@ package conn
 import (
 	"errors"
 	"github.com/xtaci/kcp-go"
-	"time"
+	"github.com/xtaci/smux"
 )
 
 type kcpConn struct {
-	conn     *kcp.UDPSession
+	session  *smux.Session
+	stream   *smux.Stream
 	listener *kcp.Listener
 	info     string
 }
@@ -17,22 +18,22 @@ func (c *kcpConn) Name() string {
 }
 
 func (c *kcpConn) Read(p []byte) (n int, err error) {
-	if c.conn != nil {
-		return c.conn.Read(p)
+	if c.stream != nil {
+		return c.stream.Read(p)
 	}
 	return 0, errors.New("empty conn")
 }
 
 func (c *kcpConn) Write(p []byte) (n int, err error) {
-	if c.conn != nil {
-		return c.conn.Write(p)
+	if c.stream != nil {
+		return c.stream.Write(p)
 	}
 	return 0, errors.New("empty conn")
 }
 
 func (c *kcpConn) Close() error {
-	if c.conn != nil {
-		return c.conn.Close()
+	if c.session != nil {
+		return c.session.Close()
 	} else if c.listener != nil {
 		return c.listener.Close()
 	}
@@ -43,8 +44,8 @@ func (c *kcpConn) Info() string {
 	if c.info != "" {
 		return c.info
 	}
-	if c.conn != nil {
-		c.info = c.conn.LocalAddr().String() + "<--kcp-->" + c.conn.RemoteAddr().String()
+	if c.session != nil {
+		c.info = c.session.LocalAddr().String() + "<--kcp-->" + c.session.RemoteAddr().String()
 	} else if c.listener != nil {
 		c.info = "kcp--" + c.listener.Addr().String()
 	} else {
@@ -59,19 +60,19 @@ func (c *kcpConn) Dial(dst string) (Conn, error) {
 		return nil, err
 	}
 
-	// kcp client如果不发包，server无法accept
-	last := time.Now()
-	for {
-		conn.(*kcp.UDPSession).Write([]byte("hello"))
-		time.Sleep(time.Millisecond)
-		if time.Now().Sub(last) > time.Second {
-			break
-		}
-	}
-
 	c.setParam(conn.(*kcp.UDPSession))
 
-	return &kcpConn{conn: conn.(*kcp.UDPSession)}, nil
+	session, err := smux.Client(conn, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	stream, err := session.OpenStream()
+	if err != nil {
+		return nil, err
+	}
+
+	return &kcpConn{session: session, stream: stream}, nil
 }
 
 func (c *kcpConn) Listen(dst string) (Conn, error) {
@@ -95,7 +96,17 @@ func (c *kcpConn) Accept() (Conn, error) {
 
 	c.setParam(conn.(*kcp.UDPSession))
 
-	return &kcpConn{conn: conn.(*kcp.UDPSession)}, nil
+	session, err := smux.Server(conn, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	stream, err := session.AcceptStream()
+	if err != nil {
+		return nil, err
+	}
+
+	return &kcpConn{session: session, stream: stream}, nil
 }
 
 func (c *kcpConn) setParam(conn *kcp.UDPSession) {
