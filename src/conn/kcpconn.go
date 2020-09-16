@@ -6,32 +6,32 @@ import (
 	"github.com/xtaci/smux"
 )
 
-type kcpConn struct {
+type KcpConn struct {
 	session  *smux.Session
 	stream   *smux.Stream
 	listener *kcp.Listener
 	info     string
 }
 
-func (c *kcpConn) Name() string {
+func (c *KcpConn) Name() string {
 	return "kcp"
 }
 
-func (c *kcpConn) Read(p []byte) (n int, err error) {
+func (c *KcpConn) Read(p []byte) (n int, err error) {
 	if c.stream != nil {
 		return c.stream.Read(p)
 	}
 	return 0, errors.New("empty conn")
 }
 
-func (c *kcpConn) Write(p []byte) (n int, err error) {
+func (c *KcpConn) Write(p []byte) (n int, err error) {
 	if c.stream != nil {
 		return c.stream.Write(p)
 	}
 	return 0, errors.New("empty conn")
 }
 
-func (c *kcpConn) Close() error {
+func (c *KcpConn) Close() error {
 	if c.session != nil {
 		return c.session.Close()
 	} else if c.listener != nil {
@@ -40,7 +40,7 @@ func (c *kcpConn) Close() error {
 	return nil
 }
 
-func (c *kcpConn) Info() string {
+func (c *KcpConn) Info() string {
 	if c.info != "" {
 		return c.info
 	}
@@ -54,7 +54,7 @@ func (c *kcpConn) Info() string {
 	return c.info
 }
 
-func (c *kcpConn) Dial(dst string) (Conn, error) {
+func (c *KcpConn) Dial(dst string) (Conn, error) {
 	conn, err := kcp.Dial(dst)
 	if err != nil {
 		return nil, err
@@ -72,10 +72,10 @@ func (c *kcpConn) Dial(dst string) (Conn, error) {
 		return nil, err
 	}
 
-	return &kcpConn{session: session, stream: stream}, nil
+	return &KcpConn{session: session, stream: stream}, nil
 }
 
-func (c *kcpConn) Listen(dst string) (Conn, error) {
+func (c *KcpConn) Listen(dst string) (Conn, error) {
 	listener, err := kcp.Listen(dst)
 	if err != nil {
 		return nil, err
@@ -85,10 +85,10 @@ func (c *kcpConn) Listen(dst string) (Conn, error) {
 	listener.(*kcp.Listener).SetWriteBuffer(4 * 1024 * 1024)
 	listener.(*kcp.Listener).SetDSCP(46)
 
-	return &kcpConn{listener: listener.(*kcp.Listener)}, nil
+	return &KcpConn{listener: listener.(*kcp.Listener)}, nil
 }
 
-func (c *kcpConn) Accept() (Conn, error) {
+func (c *KcpConn) Accept() (Conn, error) {
 	conn, err := c.listener.Accept()
 	if err != nil {
 		return nil, err
@@ -106,10 +106,10 @@ func (c *kcpConn) Accept() (Conn, error) {
 		return nil, err
 	}
 
-	return &kcpConn{session: session, stream: stream}, nil
+	return &KcpConn{session: session, stream: stream}, nil
 }
 
-func (c *kcpConn) setParam(conn *kcp.UDPSession) {
+func (c *KcpConn) setParam(conn *kcp.UDPSession) {
 	conn.SetStreamMode(true)
 	conn.SetWindowSize(10000, 10000)
 	conn.SetReadBuffer(16 * 1024 * 1024)

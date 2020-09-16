@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-type udpConn struct {
+type UdpConn struct {
 	info          string
 	config        *UdpConfig
 	dialer        *udpConnDialer
@@ -53,11 +53,11 @@ func DefaultUdpConfig() *UdpConfig {
 	}
 }
 
-func (c *udpConn) Name() string {
+func (c *UdpConn) Name() string {
 	return "udp"
 }
 
-func (c *udpConn) Read(p []byte) (n int, err error) {
+func (c *UdpConn) Read(p []byte) (n int, err error) {
 	c.checkConfig()
 
 	if c.dialer != nil {
@@ -82,7 +82,7 @@ func (c *udpConn) Read(p []byte) (n int, err error) {
 	return 0, errors.New("empty conn")
 }
 
-func (c *udpConn) Write(p []byte) (n int, err error) {
+func (c *UdpConn) Write(p []byte) (n int, err error) {
 	c.checkConfig()
 
 	if c.dialer != nil {
@@ -98,7 +98,7 @@ func (c *udpConn) Write(p []byte) (n int, err error) {
 	return 0, errors.New("empty conn")
 }
 
-func (c *udpConn) Close() error {
+func (c *UdpConn) Close() error {
 	c.checkConfig()
 
 	if c.cancel != nil {
@@ -110,7 +110,7 @@ func (c *udpConn) Close() error {
 		c.listener.wg.Stop()
 		c.listener.wg.Wait()
 		c.listener.sonny.Range(func(key, value interface{}) bool {
-			u := value.(*udpConn)
+			u := value.(*UdpConn)
 			u.Close()
 			return true
 		})
@@ -121,7 +121,7 @@ func (c *udpConn) Close() error {
 	return nil
 }
 
-func (c *udpConn) Info() string {
+func (c *UdpConn) Info() string {
 	c.checkConfig()
 
 	if c.info != "" {
@@ -139,7 +139,7 @@ func (c *udpConn) Info() string {
 	return c.info
 }
 
-func (c *udpConn) Dial(dst string) (Conn, error) {
+func (c *UdpConn) Dial(dst string) (Conn, error) {
 	c.checkConfig()
 
 	addr, err := net.ResolveUDPAddr("udp", dst)
@@ -155,10 +155,10 @@ func (c *udpConn) Dial(dst string) (Conn, error) {
 	}
 	c.cancel = nil
 	dialer := &udpConnDialer{conn: conn.(*net.UDPConn)}
-	return &udpConn{dialer: dialer}, nil
+	return &UdpConn{dialer: dialer}, nil
 }
 
-func (c *udpConn) Listen(dst string) (Conn, error) {
+func (c *UdpConn) Listen(dst string) (Conn, error) {
 	c.checkConfig()
 
 	ipaddr, err := net.ResolveUDPAddr("udp", dst)
@@ -173,7 +173,7 @@ func (c *udpConn) Listen(dst string) (Conn, error) {
 
 	ch := common.NewChannel(c.config.AcceptChanLen)
 
-	wg := group.NewGroup("udpConn Listen"+" "+dst, nil, func() {
+	wg := group.NewGroup("UdpConn Listen"+" "+dst, nil, func() {
 		listenerconn.Close()
 		ch.Close()
 	})
@@ -184,15 +184,15 @@ func (c *udpConn) Listen(dst string) (Conn, error) {
 		accept:       ch,
 	}
 
-	u := &udpConn{listener: listener}
-	wg.Go("udpConn Listen loopRecv"+" "+dst, func() error {
+	u := &UdpConn{listener: listener}
+	wg.Go("UdpConn Listen loopRecv"+" "+dst, func() error {
 		return u.loopRecv()
 	})
 
 	return u, nil
 }
 
-func (c *udpConn) Accept() (Conn, error) {
+func (c *UdpConn) Accept() (Conn, error) {
 	c.checkConfig()
 
 	if c.listener.wg == nil {
@@ -203,7 +203,7 @@ func (c *udpConn) Accept() (Conn, error) {
 		if s == nil {
 			break
 		}
-		sonny := s.(*udpConn)
+		sonny := s.(*UdpConn)
 		_, ok := c.listener.sonny.Load(sonny.listenersonny.dstaddr.String())
 		if !ok {
 			continue
@@ -216,7 +216,7 @@ func (c *udpConn) Accept() (Conn, error) {
 	return nil, errors.New("listener close")
 }
 
-func (c *udpConn) loopRecv() error {
+func (c *UdpConn) loopRecv() error {
 	c.checkConfig()
 
 	buf := make([]byte, c.config.MaxPacketSize)
@@ -238,7 +238,7 @@ func (c *udpConn) loopRecv() error {
 				recvch:     common.NewChannel(c.config.RecvChanLen),
 			}
 
-			u := &udpConn{listenersonny: sonny}
+			u := &UdpConn{listenersonny: sonny}
 			if !u.listenersonny.recvch.WriteTimeout(data, c.config.RecvChanPushTimeout) {
 				loggo.Debug("udp conn %s push %d data to %s recv channel timeout", c.Info(), len(data), u.Info())
 			}
@@ -246,14 +246,14 @@ func (c *udpConn) loopRecv() error {
 
 			c.listener.accept.Write(u)
 		} else {
-			u := v.(*udpConn)
+			u := v.(*UdpConn)
 			if !u.listenersonny.recvch.WriteTimeout(data, c.config.RecvChanPushTimeout) {
 				loggo.Debug("udp conn %s push %d data to %s recv channel timeout", c.Info(), len(data), u.Info())
 			}
 		}
 
 		c.listener.sonny.Range(func(key, value interface{}) bool {
-			u := value.(*udpConn)
+			u := value.(*UdpConn)
 			if u.listenersonny.isclose {
 				c.listener.sonny.Delete(key)
 			}
@@ -263,12 +263,17 @@ func (c *udpConn) loopRecv() error {
 	return nil
 }
 
-func (c *udpConn) checkConfig() {
+func (c *UdpConn) checkConfig() {
 	if c.config == nil {
 		c.config = DefaultUdpConfig()
 	}
 }
 
-func (c *udpConn) SetConfig(config *UdpConfig) {
+func (c *UdpConn) SetConfig(config *UdpConfig) {
 	c.config = config
+}
+
+func (c *UdpConn) GetConfig() *UdpConfig {
+	c.checkConfig()
+	return c.config
 }

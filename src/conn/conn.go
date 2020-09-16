@@ -23,15 +23,15 @@ type Conn interface {
 func NewConn(proto string) (Conn, error) {
 	proto = strings.ToLower(proto)
 	if proto == "tcp" {
-		return &tcpConn{}, nil
+		return &TcpConn{}, nil
 	} else if proto == "udp" {
-		return &udpConn{}, nil
+		return &UdpConn{}, nil
 	} else if proto == "rudp" {
-		return &rudpConn{}, nil
+		return &RudpConn{}, nil
 	} else if proto == "ricmp" {
-		return &ricmpConn{id: common.UniqueId()}, nil
+		return &RicmpConn{id: common.UniqueId()}, nil
 	} else if proto == "kcp" {
-		return &kcpConn{}, nil
+		return &KcpConn{}, nil
 	}
 	return nil, errors.New("undefined proto " + proto)
 }

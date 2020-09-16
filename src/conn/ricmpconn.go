@@ -51,7 +51,7 @@ func DefaultRicmpConfig() *RicmpConfig {
 	}
 }
 
-type ricmpConn struct {
+type RicmpConn struct {
 	info          string
 	id            string
 	config        *RicmpConfig
@@ -91,11 +91,11 @@ type ricmpConnListener struct {
 	accept       *common.Channel
 }
 
-func (c *ricmpConn) Name() string {
+func (c *RicmpConn) Name() string {
 	return "ricmp"
 }
 
-func (c *ricmpConn) Read(p []byte) (n int, err error) {
+func (c *RicmpConn) Read(p []byte) (n int, err error) {
 	c.checkConfig()
 
 	if c.isclose {
@@ -137,7 +137,7 @@ func (c *ricmpConn) Read(p []byte) (n int, err error) {
 	return 0, errors.New("read closed conn")
 }
 
-func (c *ricmpConn) Write(p []byte) (n int, err error) {
+func (c *RicmpConn) Write(p []byte) (n int, err error) {
 	c.checkConfig()
 
 	if c.isclose {
@@ -193,7 +193,7 @@ func (c *ricmpConn) Write(p []byte) (n int, err error) {
 	return 0, errors.New("write closed conn")
 }
 
-func (c *ricmpConn) Close() error {
+func (c *RicmpConn) Close() error {
 	c.checkConfig()
 
 	if c.isclose {
@@ -219,7 +219,7 @@ func (c *ricmpConn) Close() error {
 			//loggo.Debug("start Close listener %s", c.Info())
 			c.listener.wg.Stop()
 			c.listener.sonny.Range(func(key, value interface{}) bool {
-				u := value.(*ricmpConn)
+				u := value.(*RicmpConn)
 				u.Close()
 				return true
 			})
@@ -242,7 +242,7 @@ func (c *ricmpConn) Close() error {
 	return nil
 }
 
-func (c *ricmpConn) Info() string {
+func (c *RicmpConn) Info() string {
 	c.checkConfig()
 
 	if c.info != "" {
@@ -260,7 +260,7 @@ func (c *ricmpConn) Info() string {
 	return c.info
 }
 
-func (c *ricmpConn) Dial(dst string) (Conn, error) {
+func (c *RicmpConn) Dial(dst string) (Conn, error) {
 	c.checkConfig()
 
 	addr, err := net.ResolveIPAddr("ip", dst)
@@ -283,7 +283,7 @@ func (c *ricmpConn) Dial(dst string) (Conn, error) {
 	dialer := &ricmpConnDialer{serveraddr: addr, conn: conn, fm: fm,
 		icmpId: rand.Intn(math.MaxInt16), icmpSeq: 0, icmpProto: int(IcmpMsg_PING_PROTO), icmpFlag: IcmpMsg_CLIENT_SEND_FLAG}
 
-	u := &ricmpConn{id: id, config: c.config, dialer: dialer}
+	u := &RicmpConn{id: id, config: c.config, dialer: dialer}
 
 	//loggo.Debug("start connect remote ricmp %s %s", u.Info(), id)
 
@@ -354,18 +354,18 @@ func (c *ricmpConn) Dial(dst string) (Conn, error) {
 
 	//loggo.Debug("connect remote ok ricmp %s", u.Info())
 
-	wg := group.NewGroup("ricmpConn serveListenerSonny"+" "+u.Info(), nil, nil)
+	wg := group.NewGroup("RicmpConn serveListenerSonny"+" "+u.Info(), nil, nil)
 
 	u.dialer.wg = wg
 
-	wg.Go("ricmpConn updateDialerSonny"+" "+u.Info(), func() error {
+	wg.Go("RicmpConn updateDialerSonny"+" "+u.Info(), func() error {
 		return u.updateDialerSonny()
 	})
 
 	return u, nil
 }
 
-func (c *ricmpConn) Listen(dst string) (Conn, error) {
+func (c *RicmpConn) Listen(dst string) (Conn, error) {
 	c.checkConfig()
 
 	conn, err := icmp.ListenPacket("ip4:icmp", dst)
@@ -375,7 +375,7 @@ func (c *ricmpConn) Listen(dst string) (Conn, error) {
 
 	ch := common.NewChannel(c.config.AcceptChanLen)
 
-	wg := group.NewGroup("ricmpConn Listen"+" "+dst, nil, nil)
+	wg := group.NewGroup("RicmpConn Listen"+" "+dst, nil, nil)
 
 	listener := &ricmpConnListener{
 		listenerconn: conn,
@@ -383,15 +383,15 @@ func (c *ricmpConn) Listen(dst string) (Conn, error) {
 		accept:       ch,
 	}
 
-	u := &ricmpConn{id: common.UniqueId(), config: c.config, listener: listener}
-	wg.Go("ricmpConn loopListenerRecv"+" "+dst, func() error {
+	u := &RicmpConn{id: common.UniqueId(), config: c.config, listener: listener}
+	wg.Go("RicmpConn loopListenerRecv"+" "+dst, func() error {
 		return u.loopListenerRecv()
 	})
 
 	return u, nil
 }
 
-func (c *ricmpConn) Accept() (Conn, error) {
+func (c *RicmpConn) Accept() (Conn, error) {
 	c.checkConfig()
 
 	if c.listener.wg == nil {
@@ -402,7 +402,7 @@ func (c *ricmpConn) Accept() (Conn, error) {
 		if s == nil {
 			break
 		}
-		sonny := s.(*ricmpConn)
+		sonny := s.(*RicmpConn)
 		_, ok := c.listener.sonny.Load(sonny.id)
 		if !ok {
 			continue
@@ -415,17 +415,22 @@ func (c *ricmpConn) Accept() (Conn, error) {
 	return nil, errors.New("listener close")
 }
 
-func (c *ricmpConn) checkConfig() {
+func (c *RicmpConn) checkConfig() {
 	if c.config == nil {
 		c.config = DefaultRicmpConfig()
 	}
 }
 
-func (c *ricmpConn) SetConfig(config *RicmpConfig) {
+func (c *RicmpConn) SetConfig(config *RicmpConfig) {
 	c.config = config
 }
 
-func (c *ricmpConn) loopListenerRecv() error {
+func (c *RicmpConn) GetConfig() *RicmpConfig {
+	c.checkConfig()
+	return c.config
+}
+
+func (c *RicmpConn) loopListenerRecv() error {
 	c.checkConfig()
 
 	buf := make([]byte, c.config.MaxPacketSize)
@@ -447,16 +452,16 @@ func (c *ricmpConn) loopListenerRecv() error {
 			sonny := &ricmpConnListenerSonny{dstaddr: srcaddr, fatherconn: c.listener.listenerconn, fm: fm,
 				icmpId: echoId, icmpSeq: echoSeq, icmpProto: int(IcmpMsg_PONG_PROTO), icmpFlag: IcmpMsg_SERVER_SEND_FLAG}
 
-			u := &ricmpConn{id: cid, config: c.config, listenersonny: sonny}
+			u := &RicmpConn{id: cid, config: c.config, listenersonny: sonny}
 			c.listener.sonny.Store(cid, u)
 
-			c.listener.wg.Go("ricmpConn accept"+" "+u.Info(), func() error {
+			c.listener.wg.Go("RicmpConn accept"+" "+u.Info(), func() error {
 				return c.accept(u)
 			})
 
 			//loggo.Debug("start accept remote ricmp %s %s", u.Info(), cid)
 		} else {
-			u := v.(*ricmpConn)
+			u := v.(*RicmpConn)
 			u.listenersonny.icmpSeq = echoSeq
 
 			f := &frame.Frame{}
@@ -470,7 +475,7 @@ func (c *ricmpConn) loopListenerRecv() error {
 		}
 
 		c.listener.sonny.Range(func(key, value interface{}) bool {
-			u := value.(*ricmpConn)
+			u := value.(*RicmpConn)
 			if u.isclose {
 				c.listener.sonny.Delete(key)
 				//loggo.Debug("delete sonny from map %s", u.Info())
@@ -481,7 +486,7 @@ func (c *ricmpConn) loopListenerRecv() error {
 	return nil
 }
 
-func (c *ricmpConn) accept(u *ricmpConn) error {
+func (c *RicmpConn) accept(u *RicmpConn) error {
 
 	//loggo.Debug("server begin accept ricmp %s", u.Info())
 
@@ -534,11 +539,11 @@ func (c *ricmpConn) accept(u *ricmpConn) error {
 
 	c.listener.accept.Write(u)
 
-	wg := group.NewGroup("ricmpConn ListenerSonny"+" "+u.Info(), c.listener.wg, nil)
+	wg := group.NewGroup("RicmpConn ListenerSonny"+" "+u.Info(), c.listener.wg, nil)
 
 	u.listenersonny.wg = wg
 
-	wg.Go("ricmpConn updateListenerSonny"+" "+u.Info(), func() error {
+	wg.Go("RicmpConn updateListenerSonny"+" "+u.Info(), func() error {
 		return u.updateListenerSonny()
 	})
 
@@ -547,21 +552,21 @@ func (c *ricmpConn) accept(u *ricmpConn) error {
 	return nil
 }
 
-func (c *ricmpConn) updateListenerSonny() error {
+func (c *RicmpConn) updateListenerSonny() error {
 	return c.update_ricmp(c.listenersonny.wg, c.listenersonny.fm, c.listenersonny.fatherconn, c.listenersonny.dstaddr, false,
 		0, 0,
 		c.id, c.listenersonny.icmpId, &c.listenersonny.icmpSeq, c.listenersonny.icmpProto, c.listenersonny.icmpFlag,
 		false)
 }
 
-func (c *ricmpConn) updateDialerSonny() error {
+func (c *RicmpConn) updateDialerSonny() error {
 	return c.update_ricmp(c.dialer.wg, c.dialer.fm, c.dialer.conn, c.dialer.serveraddr, true,
 		c.dialer.icmpId, int(IcmpMsg_SERVER_SEND_FLAG),
 		c.id, c.dialer.icmpId, &c.dialer.icmpSeq, c.dialer.icmpProto, c.dialer.icmpFlag,
 		true)
 }
 
-func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp.PacketConn, dstaddr net.Addr, readconn bool,
+func (c *RicmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp.PacketConn, dstaddr net.Addr, readconn bool,
 	recvCheckEchoId int, recvCheckEchoFlag int, id string, icmpId int, icmpSeq *int, icmpProto int, icmpFlag IcmpMsg_TYPE, addIcmpSeq bool) error {
 
 	//loggo.Debug("start ricmp conn %s", c.Info())
@@ -569,7 +574,7 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 	stage := "open"
 
 	if readconn {
-		wg.Go("ricmpConn update_ricmp recv"+" "+c.Info(), func() error {
+		wg.Go("RicmpConn update_ricmp recv"+" "+c.Info(), func() error {
 			bytes := make([]byte, c.config.MaxPacketSize)
 			for !wg.IsExit() && stage != "closewait" {
 				// recv icmp
@@ -700,7 +705,7 @@ func (c *ricmpConn) update_ricmp(wg *group.Group, fm *frame.FrameMgr, conn *icmp
 	return errors.New("closed " + reason)
 }
 
-func (c *ricmpConn) send_icmp(conn *icmp.PacketConn, data []byte, dst net.Addr, id string, icmpId int, icmpSeq int, icmpProto int, icmpFlag IcmpMsg_TYPE) {
+func (c *RicmpConn) send_icmp(conn *icmp.PacketConn, data []byte, dst net.Addr, id string, icmpId int, icmpSeq int, icmpProto int, icmpFlag IcmpMsg_TYPE) {
 
 	m := &IcmpMsg{
 		Id:    id,
@@ -736,7 +741,7 @@ func (c *ricmpConn) send_icmp(conn *icmp.PacketConn, data []byte, dst net.Addr, 
 	conn.WriteTo(bytes, dst)
 }
 
-func (c *ricmpConn) recv_icmp(conn *icmp.PacketConn, bytes []byte) (int, net.Addr, error, string, int, int, int) {
+func (c *RicmpConn) recv_icmp(conn *icmp.PacketConn, bytes []byte) (int, net.Addr, error, string, int, int, int) {
 	n, srcaddr, err := conn.ReadFrom(bytes)
 
 	if err != nil {

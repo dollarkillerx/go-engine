@@ -32,6 +32,7 @@ type Config struct {
 	MaxClient                 int    // 最大客户端数目
 	MaxSonny                  int    // 最大连接数目
 	MainWriteChannelTimeoutMs int    // 主通道转发消息超时
+	Congestion                string // 拥塞算法
 }
 
 func DefaultConfig() *Config {
@@ -53,6 +54,7 @@ func DefaultConfig() *Config {
 		MaxClient:                 8,
 		MaxSonny:                  128,
 		MainWriteChannelTimeoutMs: 1000,
+		Congestion:                "bb",
 	}
 }
 
@@ -776,4 +778,16 @@ func checkDeadLock(wg *group.Group) error {
 	}
 	loggo.Info("checkDeadLock end")
 	return nil
+}
+
+func setCongestion(c conn.Conn, config *Config) {
+	if c.Name() == "rudp" {
+		cf := c.(*conn.RudpConn).GetConfig()
+		cf.Congestion = config.Congestion
+		c.(*conn.RudpConn).SetConfig(cf)
+	} else if c.Name() == "ricmp" {
+		cf := c.(*conn.RicmpConn).GetConfig()
+		cf.Congestion = config.Congestion
+		c.(*conn.RicmpConn).SetConfig(cf)
+	}
 }

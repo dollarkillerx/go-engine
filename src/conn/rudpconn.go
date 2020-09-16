@@ -47,7 +47,7 @@ func DefaultRudpConfig() *RudpConfig {
 	}
 }
 
-type rudpConn struct {
+type RudpConn struct {
 	info          string
 	config        *RudpConfig
 	dialer        *rudpConnDialer
@@ -78,11 +78,11 @@ type rudpConnListener struct {
 	accept       *common.Channel
 }
 
-func (c *rudpConn) Name() string {
+func (c *RudpConn) Name() string {
 	return "rudp"
 }
 
-func (c *rudpConn) Read(p []byte) (n int, err error) {
+func (c *RudpConn) Read(p []byte) (n int, err error) {
 	c.checkConfig()
 
 	if c.isclose {
@@ -124,7 +124,7 @@ func (c *rudpConn) Read(p []byte) (n int, err error) {
 	return 0, errors.New("read closed conn")
 }
 
-func (c *rudpConn) Write(p []byte) (n int, err error) {
+func (c *RudpConn) Write(p []byte) (n int, err error) {
 	c.checkConfig()
 
 	if c.isclose {
@@ -180,7 +180,7 @@ func (c *rudpConn) Write(p []byte) (n int, err error) {
 	return 0, errors.New("write closed conn")
 }
 
-func (c *rudpConn) Close() error {
+func (c *RudpConn) Close() error {
 	c.checkConfig()
 
 	if c.isclose {
@@ -209,7 +209,7 @@ func (c *rudpConn) Close() error {
 			//loggo.Debug("start Close listener %s", c.Info())
 			c.listener.wg.Stop()
 			c.listener.sonny.Range(func(key, value interface{}) bool {
-				u := value.(*rudpConn)
+				u := value.(*RudpConn)
 				u.Close()
 				return true
 			})
@@ -232,7 +232,7 @@ func (c *rudpConn) Close() error {
 	return nil
 }
 
-func (c *rudpConn) Info() string {
+func (c *RudpConn) Info() string {
 	c.checkConfig()
 
 	if c.info != "" {
@@ -250,7 +250,7 @@ func (c *rudpConn) Info() string {
 	return c.info
 }
 
-func (c *rudpConn) Dial(dst string) (Conn, error) {
+func (c *RudpConn) Dial(dst string) (Conn, error) {
 	c.checkConfig()
 
 	addr, err := net.ResolveUDPAddr("udp", dst)
@@ -275,7 +275,7 @@ func (c *rudpConn) Dial(dst string) (Conn, error) {
 
 	dialer := &rudpConnDialer{conn: conn.(*net.UDPConn), fm: fm}
 
-	u := &rudpConn{config: c.config, dialer: dialer}
+	u := &RudpConn{config: c.config, dialer: dialer}
 
 	//loggo.Debug("start connect remote rudp %s %s", u.Info(), id)
 
@@ -344,18 +344,18 @@ func (c *rudpConn) Dial(dst string) (Conn, error) {
 
 	//loggo.Debug("connect remote ok rudp %s", u.Info())
 
-	wg := group.NewGroup("rudpConn serveListenerSonny"+" "+u.Info(), nil, nil)
+	wg := group.NewGroup("RudpConn serveListenerSonny"+" "+u.Info(), nil, nil)
 
 	u.dialer.wg = wg
 
-	wg.Go("rudpConn updateDialerSonny"+" "+u.Info(), func() error {
+	wg.Go("RudpConn updateDialerSonny"+" "+u.Info(), func() error {
 		return u.updateDialerSonny()
 	})
 
 	return u, nil
 }
 
-func (c *rudpConn) Listen(dst string) (Conn, error) {
+func (c *RudpConn) Listen(dst string) (Conn, error) {
 	c.checkConfig()
 
 	ipaddr, err := net.ResolveUDPAddr("udp", dst)
@@ -370,7 +370,7 @@ func (c *rudpConn) Listen(dst string) (Conn, error) {
 
 	ch := common.NewChannel(c.config.AcceptChanLen)
 
-	wg := group.NewGroup("rudpConn Listen"+" "+dst, nil, nil)
+	wg := group.NewGroup("RudpConn Listen"+" "+dst, nil, nil)
 
 	listener := &rudpConnListener{
 		listenerconn: listenerconn,
@@ -378,15 +378,15 @@ func (c *rudpConn) Listen(dst string) (Conn, error) {
 		accept:       ch,
 	}
 
-	u := &rudpConn{config: c.config, listener: listener}
-	wg.Go("rudpConn loopListenerRecv"+" "+dst, func() error {
+	u := &RudpConn{config: c.config, listener: listener}
+	wg.Go("RudpConn loopListenerRecv"+" "+dst, func() error {
 		return u.loopListenerRecv()
 	})
 
 	return u, nil
 }
 
-func (c *rudpConn) Accept() (Conn, error) {
+func (c *RudpConn) Accept() (Conn, error) {
 	c.checkConfig()
 
 	if c.listener.wg == nil {
@@ -397,7 +397,7 @@ func (c *rudpConn) Accept() (Conn, error) {
 		if s == nil {
 			break
 		}
-		sonny := s.(*rudpConn)
+		sonny := s.(*RudpConn)
 		_, ok := c.listener.sonny.Load(sonny.listenersonny.dstaddr.String())
 		if !ok {
 			continue
@@ -410,17 +410,22 @@ func (c *rudpConn) Accept() (Conn, error) {
 	return nil, errors.New("listener close")
 }
 
-func (c *rudpConn) checkConfig() {
+func (c *RudpConn) checkConfig() {
 	if c.config == nil {
 		c.config = DefaultRudpConfig()
 	}
 }
 
-func (c *rudpConn) SetConfig(config *RudpConfig) {
+func (c *RudpConn) SetConfig(config *RudpConfig) {
 	c.config = config
 }
 
-func (c *rudpConn) loopListenerRecv() error {
+func (c *RudpConn) GetConfig() *RudpConfig {
+	c.checkConfig()
+	return c.config
+}
+
+func (c *RudpConn) loopListenerRecv() error {
 	c.checkConfig()
 
 	buf := make([]byte, c.config.MaxPacketSize)
@@ -448,16 +453,16 @@ func (c *rudpConn) loopListenerRecv() error {
 				fm:         fm,
 			}
 
-			u := &rudpConn{config: c.config, listenersonny: sonny}
+			u := &RudpConn{config: c.config, listenersonny: sonny}
 			c.listener.sonny.Store(srcaddrstr, u)
 
-			c.listener.wg.Go("rudpConn accept"+" "+u.Info(), func() error {
+			c.listener.wg.Go("RudpConn accept"+" "+u.Info(), func() error {
 				return c.accept(u)
 			})
 
 			//loggo.Debug("start accept remote rudp %s %s", u.Info(), id)
 		} else {
-			u := v.(*rudpConn)
+			u := v.(*RudpConn)
 
 			f := &frame.Frame{}
 			err := proto.Unmarshal(buf[0:n], f)
@@ -470,7 +475,7 @@ func (c *rudpConn) loopListenerRecv() error {
 		}
 
 		c.listener.sonny.Range(func(key, value interface{}) bool {
-			u := value.(*rudpConn)
+			u := value.(*RudpConn)
 			if u.isclose {
 				c.listener.sonny.Delete(key)
 				//loggo.Debug("delete sonny from map %s", u.Info())
@@ -481,7 +486,7 @@ func (c *rudpConn) loopListenerRecv() error {
 	return nil
 }
 
-func (c *rudpConn) accept(u *rudpConn) error {
+func (c *RudpConn) accept(u *RudpConn) error {
 
 	//loggo.Debug("server begin accept rudp %s", u.Info())
 
@@ -533,11 +538,11 @@ func (c *rudpConn) accept(u *rudpConn) error {
 
 	c.listener.accept.Write(u)
 
-	wg := group.NewGroup("rudpConn ListenerSonny"+" "+u.Info(), c.listener.wg, nil)
+	wg := group.NewGroup("RudpConn ListenerSonny"+" "+u.Info(), c.listener.wg, nil)
 
 	u.listenersonny.wg = wg
 
-	wg.Go("rudpConn updateListenerSonny"+" "+u.Info(), func() error {
+	wg.Go("RudpConn updateListenerSonny"+" "+u.Info(), func() error {
 		return u.updateListenerSonny()
 	})
 
@@ -546,22 +551,22 @@ func (c *rudpConn) accept(u *rudpConn) error {
 	return nil
 }
 
-func (c *rudpConn) updateListenerSonny() error {
+func (c *RudpConn) updateListenerSonny() error {
 	return c.update_rudp(c.listenersonny.wg, c.listenersonny.fm, c.listenersonny.fatherconn, c.listenersonny.dstaddr, false)
 }
 
-func (c *rudpConn) updateDialerSonny() error {
+func (c *RudpConn) updateDialerSonny() error {
 	return c.update_rudp(c.dialer.wg, c.dialer.fm, c.dialer.conn, nil, true)
 }
 
-func (c *rudpConn) update_rudp(wg *group.Group, fm *frame.FrameMgr, conn *net.UDPConn, dstaddr *net.UDPAddr, readconn bool) error {
+func (c *RudpConn) update_rudp(wg *group.Group, fm *frame.FrameMgr, conn *net.UDPConn, dstaddr *net.UDPAddr, readconn bool) error {
 
 	//loggo.Debug("start rudp conn %s", c.Info())
 
 	stage := "open"
 
 	if readconn {
-		wg.Go("rudpConn update_rudp recv"+" "+c.Info(), func() error {
+		wg.Go("RudpConn update_rudp recv"+" "+c.Info(), func() error {
 			bytes := make([]byte, c.config.MaxPacketSize)
 			for !wg.IsExit() && stage != "closewait" {
 				// recv udp
