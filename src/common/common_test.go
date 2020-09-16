@@ -236,3 +236,12 @@ func Test0013(t *testing.T) {
 		return nil
 	})
 }
+
+func Test0014(t *testing.T) {
+	fmt.Println(NearlyEqual(1, 10))
+	fmt.Println(NearlyEqual(8, 10))
+	fmt.Println(NearlyEqual(9, 10))
+	fmt.Println(NearlyEqual(99, 100))
+	fmt.Println(NearlyEqual(90000, 100000))
+	fmt.Println(NearlyEqual(80000, 100000))
+}

@@ -182,3 +182,13 @@ func SafeDivide(a int64, b int64) int64 {
 	}
 	return a / b
 }
+
+func NearlyEqual(a int, b int) bool {
+	max := a
+	if b > a {
+		max = b
+	}
+	aa := float64(a) / float64(max)
+	bb := float64(b) / float64(max)
+	return math.Abs(aa-bb) < 0.1
+}

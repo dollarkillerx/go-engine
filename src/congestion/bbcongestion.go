@@ -2,6 +2,7 @@ package congestion
 
 import (
 	"fmt"
+	"github.com/esrrhs/go-engine/src/common"
 	"github.com/esrrhs/go-engine/src/rbuffergo"
 	"math"
 	"strconv"
@@ -104,7 +105,15 @@ func (bb *BBCongestion) Update() {
 		bb.lastflyeddata = bb.flyeddata
 	} else if bb.status == bbc_status_prop {
 		maxfly := float64(lastflyedwin) * lastratewin
-		bb.maxfly = int(maxfly * prop_seq[bb.propindex])
+		curmaxfly := int(maxfly)
+		if curmaxfly > bb.maxfly {
+			bb.maxfly = curmaxfly
+		} else {
+			if common.NearlyEqual(bb.flyingdata, bb.maxfly) {
+				bb.maxfly = curmaxfly
+			}
+		}
+		bb.maxfly = int(float64(bb.maxfly) * prop_seq[bb.propindex])
 		//loggo.Debug("bbc_status_prop lastflyedwin %v lastrate %v maxfly %d prop %v", lastflyedwin, lastrate, bb.maxfly, prop_seq[bb.propindex])
 		bb.propindex++
 		bb.propindex = bb.propindex % len(prop_seq)
