@@ -612,6 +612,7 @@ func (c *RhttpConn) checkSonnyClose() error {
 			}
 			return true
 		})
+		time.Sleep(time.Second)
 	}
 	return nil
 }
