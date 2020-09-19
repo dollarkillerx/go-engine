@@ -50,7 +50,7 @@ func SupportReliableProtos() []string {
 
 func SupportProtos() []string {
 	ret := make([]string, 0)
-	ret = append(ret, SupportProtos()...)
+	ret = append(ret, SupportReliableProtos()...)
 	ret = append(ret, "udp")
 	return ret
 }
