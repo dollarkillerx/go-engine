@@ -53,7 +53,7 @@ const (
 	ProtoCodeFail = 404
 )
 
-type HttpConn struct {
+type RhttpConn struct {
 	id            string
 	isclose       bool
 	info          string
@@ -91,11 +91,11 @@ type httpConnListener struct {
 	accept       *common.Channel
 }
 
-func (c *HttpConn) Name() string {
+func (c *RhttpConn) Name() string {
 	return "http"
 }
 
-func (c *HttpConn) Read(p []byte) (n int, err error) {
+func (c *RhttpConn) Read(p []byte) (n int, err error) {
 	c.checkConfig()
 
 	if c.isclose {
@@ -134,7 +134,7 @@ func (c *HttpConn) Read(p []byte) (n int, err error) {
 	return 0, errors.New("read closed conn")
 }
 
-func (c *HttpConn) Write(p []byte) (n int, err error) {
+func (c *RhttpConn) Write(p []byte) (n int, err error) {
 	c.checkConfig()
 
 	if c.isclose {
@@ -187,7 +187,7 @@ func (c *HttpConn) Write(p []byte) (n int, err error) {
 	return 0, errors.New("write closed conn")
 }
 
-func (c *HttpConn) Close() error {
+func (c *RhttpConn) Close() error {
 	c.checkConfig()
 
 	if c.isclose {
@@ -216,7 +216,7 @@ func (c *HttpConn) Close() error {
 			//loggo.Debug("start Close listener %s", c.Info())
 			c.listener.wg.Stop()
 			c.listener.sonny.Range(func(key, value interface{}) bool {
-				u := value.(*HttpConn)
+				u := value.(*RhttpConn)
 				u.Close()
 				return true
 			})
@@ -232,25 +232,25 @@ func (c *HttpConn) Close() error {
 	return nil
 }
 
-func (c *HttpConn) Info() string {
+func (c *RhttpConn) Info() string {
 	c.checkConfig()
 
 	if c.info != "" {
 		return c.info
 	}
 	if c.dialer != nil {
-		c.info = c.id + "<--http dialer-->" + c.dialer.addr
+		c.info = c.id + "<--rhttp dialer-->" + c.dialer.addr
 	} else if c.listener != nil {
-		c.info = "http listener--" + c.listener.addr
+		c.info = "rhttp listener--" + c.listener.addr
 	} else if c.listenersonny != nil {
-		c.info = c.id + "<--http listenersonny-->" + c.listenersonny.addr
+		c.info = c.id + "<--rhttp listenersonny-->" + c.listenersonny.addr
 	} else {
 		c.info = "empty http conn"
 	}
 	return c.info
 }
 
-func (c *HttpConn) postData(url string, d []byte) (int, []byte, error) {
+func (c *RhttpConn) postData(url string, d []byte) (int, []byte, error) {
 
 	data := bytes.NewReader(d)
 	req, err := http.NewRequest("POST", url, data)
@@ -274,7 +274,7 @@ func (c *HttpConn) postData(url string, d []byte) (int, []byte, error) {
 	return resp.StatusCode, body, nil
 }
 
-func (c *HttpConn) Dial(dst string) (Conn, error) {
+func (c *RhttpConn) Dial(dst string) (Conn, error) {
 	c.checkConfig()
 
 	id := common.UniqueId()
@@ -294,23 +294,23 @@ func (c *HttpConn) Dial(dst string) (Conn, error) {
 		return nil, errors.New("dial fail " + string(ret))
 	}
 
-	wg := group.NewGroup("HttpConn Dialer"+" "+id, nil, nil)
+	wg := group.NewGroup("RhttpConn Dialer"+" "+id, nil, nil)
 
 	sendb := rbuffergo.New(c.config.BufferSize, true)
 	recvb := rbuffergo.New(c.config.BufferSize, true)
 
 	dialer := &httpConnDialer{wg: wg, url: url, index: 0, retry: 0, addr: dst}
 
-	u := &HttpConn{id: id, config: c.config, dialer: dialer, sendb: sendb, recvb: recvb}
+	u := &RhttpConn{id: id, config: c.config, dialer: dialer, sendb: sendb, recvb: recvb}
 
-	wg.Go("HttpConn updateDialerSonny"+" "+u.Info(), func() error {
+	wg.Go("RhttpConn updateDialerSonny"+" "+u.Info(), func() error {
 		return u.updateDialerSonny()
 	})
 
 	return u, nil
 }
 
-func (c *HttpConn) updateDialerSonny() error {
+func (c *RhttpConn) updateDialerSonny() error {
 
 	//loggo.Debug("start http conn %s", c.Info())
 
@@ -407,7 +407,7 @@ func (c *HttpConn) updateDialerSonny() error {
 	return errors.New("closed")
 }
 
-func (c *HttpConn) Listen(dst string) (Conn, error) {
+func (c *RhttpConn) Listen(dst string) (Conn, error) {
 	c.checkConfig()
 
 	addr, err := net.ResolveTCPAddr("tcp", dst)
@@ -421,7 +421,7 @@ func (c *HttpConn) Listen(dst string) (Conn, error) {
 
 	ch := common.NewChannel(c.config.AcceptChanLen)
 
-	wg := group.NewGroup("HttpConn Listen"+" "+dst, nil, func() {
+	wg := group.NewGroup("RhttpConn Listen"+" "+dst, nil, func() {
 		listenerconn.Close()
 		ch.Close()
 	})
@@ -433,18 +433,18 @@ func (c *HttpConn) Listen(dst string) (Conn, error) {
 		accept:       ch,
 	}
 
-	u := &HttpConn{id: common.UniqueId(), config: c.config, listener: listener}
-	wg.Go("HttpConn Listen loopRecv"+" "+dst, func() error {
+	u := &RhttpConn{id: common.UniqueId(), config: c.config, listener: listener}
+	wg.Go("RhttpConn Listen loopRecv"+" "+dst, func() error {
 		return u.loopRecv()
 	})
-	wg.Go("HttpConn Listen checkSonnyClose"+" "+dst, func() error {
+	wg.Go("RhttpConn Listen checkSonnyClose"+" "+dst, func() error {
 		return u.checkSonnyClose()
 	})
 
 	return u, nil
 }
 
-func (c *HttpConn) Accept() (Conn, error) {
+func (c *RhttpConn) Accept() (Conn, error) {
 	c.checkConfig()
 
 	if c.listener.wg == nil {
@@ -455,7 +455,7 @@ func (c *HttpConn) Accept() (Conn, error) {
 		if s == nil {
 			break
 		}
-		sonny := s.(*HttpConn)
+		sonny := s.(*RhttpConn)
 		_, ok := c.listener.sonny.Load(sonny.id)
 		if !ok {
 			continue
@@ -468,7 +468,7 @@ func (c *HttpConn) Accept() (Conn, error) {
 	return nil, errors.New("listener close")
 }
 
-func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (c *RhttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	//loggo.Debug("ServeHTTP %v %v", r.Method, r.RequestURI)
 
 	u, err := url.Parse(r.RequestURI)
@@ -504,7 +504,7 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		sendb := rbuffergo.New(c.config.BufferSize, true)
 		recvb := rbuffergo.New(c.config.BufferSize, true)
 
-		u := &HttpConn{id: id, config: c.config, listenersonny: sonny, sendb: sendb, recvb: recvb}
+		u := &RhttpConn{id: id, config: c.config, listenersonny: sonny, sendb: sendb, recvb: recvb}
 
 		c.listener.sonny.Store(id, u)
 
@@ -513,7 +513,7 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(ProtoCodeOK)
 
 	} else {
-		u := v.(*HttpConn)
+		u := v.(*RhttpConn)
 		u.listenersonny.lastRecvTime = time.Now()
 
 		if ty != ProtoData && ty != ProtoClose {
@@ -596,17 +596,17 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (c *HttpConn) loopRecv() error {
+func (c *RhttpConn) loopRecv() error {
 	c.checkConfig()
 	http.Serve(c.listener.listenerconn, c)
 	return nil
 }
 
-func (c *HttpConn) checkSonnyClose() error {
+func (c *RhttpConn) checkSonnyClose() error {
 	c.checkConfig()
 	for !c.listener.wg.IsExit() {
 		c.listener.sonny.Range(func(key, value interface{}) bool {
-			u := value.(*HttpConn)
+			u := value.(*RhttpConn)
 			if u.isclose || time.Now().Sub(u.listenersonny.lastRecvTime) > time.Second*time.Duration(c.config.HBTimeoutMs) {
 				c.listener.sonny.Delete(key)
 			}
@@ -616,17 +616,17 @@ func (c *HttpConn) checkSonnyClose() error {
 	return nil
 }
 
-func (c *HttpConn) checkConfig() {
+func (c *RhttpConn) checkConfig() {
 	if c.config == nil {
 		c.config = DefaultHttpConfig()
 	}
 }
 
-func (c *HttpConn) SetConfig(config *HttpConfig) {
+func (c *RhttpConn) SetConfig(config *HttpConfig) {
 	c.config = config
 }
 
-func (c *HttpConn) GetConfig() *HttpConfig {
+func (c *RhttpConn) GetConfig() *HttpConfig {
 	c.checkConfig()
 	return c.config
 }

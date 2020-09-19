@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-func Test000HTTP(t *testing.T) {
-	c, err := NewConn("http")
+func Test000RHTTP(t *testing.T) {
+	c, err := NewConn("rhttp")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -33,8 +33,8 @@ func Test000HTTP(t *testing.T) {
 	time.Sleep(time.Second)
 }
 
-func Test0002HTTP(t *testing.T) {
-	c, err := NewConn("http")
+func Test0002RHTTP(t *testing.T) {
+	c, err := NewConn("rhttp")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -59,8 +59,8 @@ func Test0002HTTP(t *testing.T) {
 	time.Sleep(time.Second)
 }
 
-func Test0003HTTP(t *testing.T) {
-	c, err := NewConn("http")
+func Test0003RHTTP(t *testing.T) {
+	c, err := NewConn("rhttp")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -103,8 +103,8 @@ func Test0003HTTP(t *testing.T) {
 	time.Sleep(time.Second)
 }
 
-func Test0004HTTP(t *testing.T) {
-	c, err := NewConn("http")
+func Test0004RHTTP(t *testing.T) {
+	c, err := NewConn("rhttp")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -147,8 +147,8 @@ func Test0004HTTP(t *testing.T) {
 	time.Sleep(time.Second)
 }
 
-func Test0005HTTP(t *testing.T) {
-	c, err := NewConn("http")
+func Test0005RHTTP(t *testing.T) {
+	c, err := NewConn("rhttp")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -206,8 +206,8 @@ func Test0005HTTP(t *testing.T) {
 	time.Sleep(time.Second)
 }
 
-func Test0005HTTP1(t *testing.T) {
-	c, err := NewConn("http")
+func Test0005RHTTP1(t *testing.T) {
+	c, err := NewConn("rhttp")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -265,8 +265,8 @@ func Test0005HTTP1(t *testing.T) {
 	time.Sleep(time.Second)
 }
 
-func Test0006HTTP(t *testing.T) {
-	c, err := NewConn("http")
+func Test0006RHTTP(t *testing.T) {
+	c, err := NewConn("rhttp")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -317,9 +317,9 @@ func Test0006HTTP(t *testing.T) {
 	time.Sleep(time.Second)
 }
 
-func Test0007HTTP(t *testing.T) {
+func Test0007RHTTP(t *testing.T) {
 
-	c, err := NewConn("http")
+	c, err := NewConn("rhttp")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -363,8 +363,8 @@ func Test0007HTTP(t *testing.T) {
 	time.Sleep(time.Second)
 }
 
-func Test0008HTTP(t *testing.T) {
-	c, err := NewConn("http")
+func Test0008RHTTP(t *testing.T) {
+	c, err := NewConn("rhttp")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -444,8 +444,8 @@ func Test0008HTTP(t *testing.T) {
 	time.Sleep(time.Second)
 }
 
-func Test0009HTTP(t *testing.T) {
-	c, err := NewConn("http")
+func Test0009RHTTP(t *testing.T) {
+	c, err := NewConn("rhttp")
 	if err != nil {
 		fmt.Println(err)
 		return
