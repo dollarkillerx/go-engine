@@ -48,7 +48,15 @@ func (c *QuicConn) Info() string {
 		return c.info
 	}
 	if c.session != nil {
-		c.info = c.session.LocalAddr().String() + "<--quic-->" + c.session.RemoteAddr().String()
+		localaddr := ""
+		if c.session.LocalAddr() != nil {
+			localaddr = c.session.LocalAddr().String()
+		}
+		remoteaddr := ""
+		if c.session.RemoteAddr() != nil {
+			remoteaddr = c.session.RemoteAddr().String()
+		}
+		c.info = localaddr + "<--quic-->" + remoteaddr
 	} else if c.listener != nil {
 		c.info = "kcp--" + c.listener.Addr().String()
 	} else {
