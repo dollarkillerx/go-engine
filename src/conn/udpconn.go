@@ -155,7 +155,7 @@ func (c *UdpConn) Dial(dst string) (Conn, error) {
 	}
 	c.cancel = nil
 	dialer := &udpConnDialer{conn: conn.(*net.UDPConn)}
-	return &UdpConn{dialer: dialer}, nil
+	return &UdpConn{config: c.config, dialer: dialer}, nil
 }
 
 func (c *UdpConn) Listen(dst string) (Conn, error) {
@@ -184,7 +184,7 @@ func (c *UdpConn) Listen(dst string) (Conn, error) {
 		accept:       ch,
 	}
 
-	u := &UdpConn{listener: listener}
+	u := &UdpConn{config: c.config, listener: listener}
 	wg.Go("UdpConn Listen loopRecv"+" "+dst, func() error {
 		return u.loopRecv()
 	})
@@ -238,7 +238,7 @@ func (c *UdpConn) loopRecv() error {
 				recvch:     common.NewChannel(c.config.RecvChanLen),
 			}
 
-			u := &UdpConn{listenersonny: sonny}
+			u := &UdpConn{config: c.config, listenersonny: sonny}
 			if !u.listenersonny.recvch.WriteTimeout(data, c.config.RecvChanPushTimeout) {
 				loggo.Debug("udp conn %s push %d data to %s recv channel timeout", c.Info(), len(data), u.Info())
 			}
