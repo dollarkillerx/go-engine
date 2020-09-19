@@ -37,3 +37,28 @@ func NewConn(proto string) (Conn, error) {
 	}
 	return nil, errors.New("undefined proto " + proto)
 }
+
+func SupportReliableProtos() []string {
+	ret := make([]string, 0)
+	ret = append(ret, "tcp")
+	ret = append(ret, "rudp")
+	ret = append(ret, "ricmp")
+	ret = append(ret, "kcp")
+	ret = append(ret, "quic")
+	return ret
+}
+
+func SupportProtos() []string {
+	ret := make([]string, 0)
+	ret = append(ret, SupportProtos()...)
+	ret = append(ret, "udp")
+	return ret
+}
+
+func HasReliableProto(proto string) bool {
+	return common.HasString(SupportReliableProtos(), proto)
+}
+
+func HasProto(proto string) bool {
+	return common.HasString(SupportProtos(), proto)
+}
