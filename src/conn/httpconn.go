@@ -362,9 +362,11 @@ func (c *HttpConn) updateDialerSonny() error {
 		}
 		lastsend = nil
 
+		//loggo.Debug("dailer send ok %s %d %d %d", c.Info(), c.dialer.index, len(send), len(ret))
+
 		c.dialer.index++
 		if c.dialer.index >= c.config.MaxMsgIndex {
-			c.dialer.index = c.config.MaxMsgIndex
+			c.dialer.index = 0
 		}
 
 		if len(ret) > 0 {
