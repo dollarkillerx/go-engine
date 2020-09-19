@@ -1,32 +1,34 @@
 # go-engine
-go语言开发通用代码库
+golang的通用开发库
 
 ## 内容
-#### 基本
-* 颜色支持
-* 非阻塞终端
-* 日志
+#### 数据结构
 * 循环数组
 * 跳表
 * 有锁链表
+* 自失效Map
+#### 基础库
+* 数学库
+* 时间库
+* 日志库
+* 网络库
+#### 基础模块
 * 线程池
 * 内存池
-* 自失效Map
 * 同步rpc
 * FIFO消息
+* 协程组
+* 文件快速遍历
 #### 环境
+* 终端颜色支持
+* 非阻塞终端
 * nodejs
 * shell
 * 系统监控
 #### 算法
-* 德州扑克算法
+* 德州扑克
 * 可靠帧控制
 * 拥塞控制
-#### 基础模块
-* 通用网络层
-* 可靠UDP
-* 可靠ICMP
-* KCP、QUIC第三方协议
 #### 功能模块
 * DHT爬虫
 * 网页爬虫
@@ -36,7 +38,6 @@ go语言开发通用代码库
 #### 第三方
 * IP查询
 
-## 依赖
+## 使用
 * 设置GOPATH ``export GOPATH=$HOME/go``
 * 安装nodejs，设置NODE_PATH ``export NODE_PATH=$GOPATH/src/github.com/esrrhs/go-engine/node/linux/node_modules/``
-
