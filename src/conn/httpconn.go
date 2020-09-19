@@ -6,7 +6,6 @@ import (
 	"errors"
 	"github.com/esrrhs/go-engine/src/common"
 	"github.com/esrrhs/go-engine/src/group"
-	"github.com/esrrhs/go-engine/src/loggo"
 	"github.com/esrrhs/go-engine/src/rbuffergo"
 	"io/ioutil"
 	"net"
@@ -40,7 +39,7 @@ func DefaultHttpConfig() *HttpConfig {
 		MaxRetryNum:         10,
 		CloseWaitTimeoutMs:  5000,
 		HBTimeoutMs:         10000,
-		MaxMsgIndex:         10000,
+		MaxMsgIndex:         100,
 	}
 }
 
@@ -308,7 +307,7 @@ func (c *HttpConn) Dial(dst string) (Conn, error) {
 
 func (c *HttpConn) updateDialerSonny() error {
 
-	loggo.Debug("start http conn %s", c.Info())
+	//loggo.Debug("start http conn %s", c.Info())
 
 	buf := make([]byte, c.config.MaxPacketSize)
 	var lastrecv []byte
@@ -332,7 +331,7 @@ func (c *HttpConn) updateDialerSonny() error {
 			sendn := common.MinOfInt(c.sendb.Size(), len(buf))
 			if sendn > 0 {
 				if !c.sendb.Read(buf[0:sendn]) {
-					loggo.Error("sendb Read fail")
+					//loggo.Error("sendb Read fail")
 					return errors.New("sendb Read fail")
 				}
 				active = true
@@ -348,7 +347,7 @@ func (c *HttpConn) updateDialerSonny() error {
 			if code != 403 {
 				c.dialer.retry++
 				if c.dialer.retry > c.config.MaxRetryNum {
-					loggo.Error("retry max %d", c.dialer.retry)
+					//loggo.Error("retry max %d", c.dialer.retry)
 					break
 				}
 			}
@@ -376,7 +375,7 @@ func (c *HttpConn) updateDialerSonny() error {
 		}
 	}
 
-	loggo.Debug("close http conn update %s", c.Info())
+	//loggo.Debug("close http conn update %s", c.Info())
 
 	startEndTime := time.Now()
 	for !c.dialer.wg.IsExit() {
@@ -394,7 +393,7 @@ func (c *HttpConn) updateDialerSonny() error {
 		time.Sleep(time.Millisecond * 10)
 	}
 
-	loggo.Debug("close http conn %s", c.Info())
+	//loggo.Debug("close http conn %s", c.Info())
 
 	return errors.New("closed")
 }
@@ -465,7 +464,7 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	u, err := url.Parse(r.RequestURI)
 	if err != nil {
-		loggo.Error("Parse fail %v", r.RequestURI)
+		//loggo.Error("Parse fail %v", r.RequestURI)
 		w.WriteHeader(404)
 		w.Write([]byte("url Parse fail"))
 		return
@@ -475,7 +474,7 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	param := u.Query()
 	types, ok := param["type"]
 	if !ok || len(types) == 0 {
-		loggo.Error("no params type %v", r.RequestURI)
+		//loggo.Error("no params type %v", r.RequestURI)
 		w.WriteHeader(404)
 		w.Write([]byte("no params type"))
 		return
@@ -485,7 +484,7 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	v, ok := c.listener.sonny.Load(id)
 	if !ok {
 		if ty != ProtoConnnect {
-			loggo.Error("no sonny id %v", id)
+			//loggo.Error("no sonny id %v", id)
 			w.WriteHeader(404)
 			w.Write([]byte("no sonny id"))
 			return
@@ -509,7 +508,7 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		u.listenersonny.lastRecvTime = time.Now()
 
 		if ty != ProtoData {
-			loggo.Error("wrong type %v %v", id, ty)
+			//loggo.Error("wrong type %v %v", id, ty)
 			w.WriteHeader(404)
 			w.Write([]byte("wrong type " + ty))
 			return
@@ -517,14 +516,14 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		indexs, ok := param["index"]
 		if !ok || len(indexs) == 0 {
-			loggo.Error("no index type %v", r.RequestURI)
+			//loggo.Error("no index type %v", r.RequestURI)
 			w.WriteHeader(404)
 			w.Write([]byte("no params index"))
 			return
 		}
 		index, err := strconv.Atoi(indexs[0])
 		if err != nil {
-			loggo.Error("index fail %v", r.RequestURI)
+			//loggo.Error("index fail %v", r.RequestURI)
 			w.WriteHeader(404)
 			w.Write([]byte("index fail"))
 			return
@@ -539,7 +538,7 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if nextindex == u.listenersonny.expectIndex {
 				newrecv = false
 			} else {
-				loggo.Error("index diff %v %v", r.RequestURI, u.listenersonny.expectIndex)
+				//loggo.Error("index diff %v %v", r.RequestURI, u.listenersonny.expectIndex)
 				w.WriteHeader(404)
 				w.Write([]byte("index diff"))
 				return
@@ -549,14 +548,14 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if newrecv {
 			body, err := ioutil.ReadAll(r.Body)
 			if err != nil {
-				loggo.Error("read body fail %v", r.RequestURI)
+				//loggo.Error("read body fail %v", r.RequestURI)
 				w.WriteHeader(404)
 				w.Write([]byte("read body fail"))
 				return
 			}
 
 			if !u.recvb.Write(body) {
-				loggo.Debug("body write fail %v %v", r.RequestURI, len(body))
+				//loggo.Debug("body write fail %v %v", r.RequestURI, len(body))
 				w.WriteHeader(403)
 				w.Write([]byte("body write fail"))
 				return

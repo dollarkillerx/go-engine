@@ -198,7 +198,7 @@ func Test0005HTTP(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	time.Sleep(time.Second)
+	time.Sleep(time.Second * 10)
 
 	cc.Close()
 	ccc.Close()
@@ -257,7 +257,7 @@ func Test0005HTTP1(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	time.Sleep(time.Second)
+	time.Sleep(time.Second * 10)
 
 	cc.Close()
 	ccc.Close()
