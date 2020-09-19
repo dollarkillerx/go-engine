@@ -34,6 +34,8 @@ func NewConn(proto string) (Conn, error) {
 		return &KcpConn{}, nil
 	} else if proto == "quic" {
 		return &QuicConn{}, nil
+	} else if proto == "http" {
+		return &HttpConn{}, nil
 	}
 	return nil, errors.New("undefined proto " + proto)
 }
@@ -45,6 +47,7 @@ func SupportReliableProtos() []string {
 	ret = append(ret, "ricmp")
 	ret = append(ret, "kcp")
 	ret = append(ret, "quic")
+	ret = append(ret, "http")
 	return ret
 }
 
