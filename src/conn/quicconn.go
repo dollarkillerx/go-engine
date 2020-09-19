@@ -10,7 +10,9 @@ import (
 )
 
 type QuicConn struct {
+	qsession quic.Session
 	session  *smux.Session
+	qsteam   quic.Stream
 	stream   *smux.Stream
 	listener quic.Listener
 	info     string
@@ -48,15 +50,7 @@ func (c *QuicConn) Info() string {
 		return c.info
 	}
 	if c.session != nil {
-		localaddr := ""
-		if c.session.LocalAddr() != nil {
-			localaddr = c.session.LocalAddr().String()
-		}
-		remoteaddr := ""
-		if c.session.RemoteAddr() != nil {
-			remoteaddr = c.session.RemoteAddr().String()
-		}
-		c.info = localaddr + "<--quic-->" + remoteaddr
+		c.info = c.qsession.LocalAddr().String() + "<--quic-->" + c.qsession.RemoteAddr().String()
 	} else if c.listener != nil {
 		c.info = "kcp--" + c.listener.Addr().String()
 	} else {
@@ -91,7 +85,7 @@ func (c *QuicConn) Dial(dst string) (Conn, error) {
 		return nil, err
 	}
 
-	return &QuicConn{session: ss, stream: st}, nil
+	return &QuicConn{qsession: session, session: ss, qsteam: stream, stream: st}, nil
 }
 
 func (c *QuicConn) Listen(dst string) (Conn, error) {
@@ -129,5 +123,5 @@ func (c *QuicConn) Accept() (Conn, error) {
 		return nil, err
 	}
 
-	return &QuicConn{session: ss, stream: st}, nil
+	return &QuicConn{qsession: session, session: ss, qsteam: stream, stream: st}, nil
 }
