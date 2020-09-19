@@ -344,7 +344,7 @@ func (c *RudpConn) Dial(dst string) (Conn, error) {
 
 	//loggo.Debug("connect remote ok rudp %s", u.Info())
 
-	wg := group.NewGroup("RudpConn serveListenerSonny"+" "+u.Info(), nil, nil)
+	wg := group.NewGroup("RudpConn Dialer"+" "+u.Info(), nil, nil)
 
 	u.dialer.wg = wg
 
