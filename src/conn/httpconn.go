@@ -46,6 +46,11 @@ func DefaultHttpConfig() *HttpConfig {
 const (
 	ProtoConnnect = "connect"
 	ProtoData     = "data"
+	ProtoClose    = "close"
+
+	ProtoCodeOK   = 201
+	ProtoCodeFull = 403
+	ProtoCodeFail = 404
 )
 
 type HttpConn struct {
@@ -285,7 +290,7 @@ func (c *HttpConn) Dial(dst string) (Conn, error) {
 		return nil, err
 	}
 
-	if code != 200 {
+	if code != ProtoCodeOK {
 		return nil, errors.New("dial fail " + string(ret))
 	}
 
@@ -343,8 +348,8 @@ func (c *HttpConn) updateDialerSonny() error {
 		}
 
 		code, ret, err := c.postData(c.dialer.url+"?type="+ProtoData+"&index="+strconv.Itoa(c.dialer.index), send)
-		if err != nil || code != 200 {
-			if code != 403 {
+		if err != nil || code != ProtoCodeOK {
+			if code != ProtoCodeFull {
 				c.dialer.retry++
 				if c.dialer.retry > c.config.MaxRetryNum {
 					//loggo.Error("retry max %d", c.dialer.retry)
@@ -394,6 +399,8 @@ func (c *HttpConn) updateDialerSonny() error {
 	}
 
 	//loggo.Debug("close http conn %s", c.Info())
+
+	c.postData(c.dialer.url+"?type="+ProtoClose, []byte{})
 
 	return errors.New("closed")
 }
@@ -465,7 +472,7 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	u, err := url.Parse(r.RequestURI)
 	if err != nil {
 		//loggo.Error("Parse fail %v", r.RequestURI)
-		w.WriteHeader(404)
+		w.WriteHeader(ProtoCodeFail)
 		w.Write([]byte("url Parse fail"))
 		return
 	}
@@ -475,7 +482,7 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	types, ok := param["type"]
 	if !ok || len(types) == 0 {
 		//loggo.Error("no params type %v", r.RequestURI)
-		w.WriteHeader(404)
+		w.WriteHeader(ProtoCodeFail)
 		w.Write([]byte("no params type"))
 		return
 	}
@@ -485,7 +492,7 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		if ty != ProtoConnnect {
 			//loggo.Error("no sonny id %v", id)
-			w.WriteHeader(404)
+			w.WriteHeader(ProtoCodeFail)
 			w.Write([]byte("no sonny id"))
 			return
 		}
@@ -501,30 +508,36 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		c.listener.accept.Write(u)
 
-		w.WriteHeader(200)
+		w.WriteHeader(ProtoCodeOK)
 
 	} else {
 		u := v.(*HttpConn)
 		u.listenersonny.lastRecvTime = time.Now()
 
-		if ty != ProtoData {
+		if ty != ProtoData && ty != ProtoClose {
 			//loggo.Error("wrong type %v %v", id, ty)
-			w.WriteHeader(404)
+			w.WriteHeader(ProtoCodeFail)
 			w.Write([]byte("wrong type " + ty))
+			return
+		}
+
+		if ty == ProtoClose {
+			c.listener.sonny.Delete(u.id)
+			w.WriteHeader(ProtoCodeOK)
 			return
 		}
 
 		indexs, ok := param["index"]
 		if !ok || len(indexs) == 0 {
 			//loggo.Error("no index type %v", r.RequestURI)
-			w.WriteHeader(404)
+			w.WriteHeader(ProtoCodeFail)
 			w.Write([]byte("no params index"))
 			return
 		}
 		index, err := strconv.Atoi(indexs[0])
 		if err != nil {
 			//loggo.Error("index fail %v", r.RequestURI)
-			w.WriteHeader(404)
+			w.WriteHeader(ProtoCodeFail)
 			w.Write([]byte("index fail"))
 			return
 		}
@@ -539,7 +552,7 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				newrecv = false
 			} else {
 				//loggo.Error("index diff %v %v", r.RequestURI, u.listenersonny.expectIndex)
-				w.WriteHeader(404)
+				w.WriteHeader(ProtoCodeFail)
 				w.Write([]byte("index diff"))
 				return
 			}
@@ -549,14 +562,14 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			body, err := ioutil.ReadAll(r.Body)
 			if err != nil {
 				//loggo.Error("read body fail %v", r.RequestURI)
-				w.WriteHeader(404)
+				w.WriteHeader(ProtoCodeFail)
 				w.Write([]byte("read body fail"))
 				return
 			}
 
 			if !u.recvb.Write(body) {
 				//loggo.Debug("body write fail %v %v", r.RequestURI, len(body))
-				w.WriteHeader(403)
+				w.WriteHeader(ProtoCodeFull)
 				w.Write([]byte("body write fail"))
 				return
 			}
@@ -570,12 +583,12 @@ func (c *HttpConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			buff := make([]byte, sendn)
 			u.sendb.Read(buff)
 
-			w.WriteHeader(200)
+			w.WriteHeader(ProtoCodeOK)
 			w.Write(buff)
 
 			u.listenersonny.lastSend = buff
 		} else {
-			w.WriteHeader(200)
+			w.WriteHeader(ProtoCodeOK)
 			w.Write(u.listenersonny.lastSend)
 		}
 	}
