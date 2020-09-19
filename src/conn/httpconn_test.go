@@ -443,3 +443,84 @@ func Test0008HTTP(t *testing.T) {
 
 	time.Sleep(time.Second)
 }
+
+func Test0009HTTP(t *testing.T) {
+	c, err := NewConn("http")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	cc, err := c.Listen(":58080")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	go func() {
+		cc, err := cc.Accept()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println("accept done")
+		data := make([]byte, 1024*1024)
+		start := time.Now()
+		speed := 0
+		for {
+			//fmt.Println("start Read")
+			n, err := cc.Read(data)
+			//fmt.Println("start Read")
+			if err != nil {
+				fmt.Println(err)
+				fmt.Println("Read done")
+				return
+			}
+			speed += n
+			if time.Now().Sub(start) > time.Second {
+				speed = speed / 1024 / 1024
+				loggo.Info("read speed %v MB per second", float64(speed)/float64(time.Now().Sub(start)/time.Second))
+				speed = 0
+				start = time.Now()
+			}
+		}
+		fmt.Println("write done")
+	}()
+
+	ccc, err := c.Dial("127.0.0.1:58080")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	go func() {
+		fmt.Println("start client")
+		buf := make([]byte, 1024*1024)
+		start := time.Now()
+		speed := 0
+		for {
+			//fmt.Println("start Write")
+			_, err := ccc.Write(buf)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			//fmt.Println("end Write")
+			speed += len(buf)
+			if time.Now().Sub(start) > time.Second {
+				speed = speed / 1024 / 1024
+				loggo.Info("write speed %v MB per second", float64(speed)/float64(time.Now().Sub(start)/time.Second))
+				speed = 0
+				start = time.Now()
+			}
+		}
+		fmt.Println("write done")
+	}()
+
+	time.Sleep(time.Second * 60)
+
+	cc.Close()
+	ccc.Close()
+
+	time.Sleep(time.Second)
+}

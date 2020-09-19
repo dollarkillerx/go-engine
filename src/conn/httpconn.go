@@ -48,7 +48,7 @@ const (
 	ProtoData     = "data"
 	ProtoClose    = "close"
 
-	ProtoCodeOK   = 201
+	ProtoCodeOK   = 200
 	ProtoCodeFull = 403
 	ProtoCodeFail = 404
 )
