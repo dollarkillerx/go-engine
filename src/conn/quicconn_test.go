@@ -15,7 +15,7 @@ func Test0001Quic(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen("localhost:58080")
+	cc, err := c.Listen("localhost:58081")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -41,7 +41,7 @@ func Test0002Quic(t *testing.T) {
 	}
 
 	go func() {
-		_, err := c.Dial("localhost:58080")
+		_, err := c.Dial("localhost:58081")
 		fmt.Println(err)
 	}()
 
@@ -59,7 +59,7 @@ func Test0003Quic(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen("localhost:58080")
+	cc, err := c.Listen("localhost:58081")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -70,7 +70,7 @@ func Test0003Quic(t *testing.T) {
 		fmt.Println("accept done")
 	}()
 
-	ccc, err := c.Dial("localhost:58080")
+	ccc, err := c.Dial("localhost:58081")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -100,7 +100,7 @@ func Test0004Quic(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen("localhost:58080")
+	cc, err := c.Listen("localhost:58081")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -111,7 +111,7 @@ func Test0004Quic(t *testing.T) {
 		fmt.Println("accept done")
 	}()
 
-	ccc, err := c.Dial("localhost:58080")
+	ccc, err := c.Dial("localhost:58081")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -144,7 +144,7 @@ func Test0005Quic(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen("localhost:58080")
+	cc, err := c.Listen("localhost:58081")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -171,7 +171,7 @@ func Test0005Quic(t *testing.T) {
 		}
 	}()
 
-	ccc, err := c.Dial("localhost:58080")
+	ccc, err := c.Dial("localhost:58081")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -203,7 +203,7 @@ func Test0005Quic1(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen("localhost:58080")
+	cc, err := c.Listen("localhost:58081")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -226,7 +226,7 @@ func Test0005Quic1(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	ccc, err := c.Dial("localhost:58080")
+	ccc, err := c.Dial("localhost:58081")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -262,7 +262,7 @@ func Test0006Quic(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen("localhost:58080")
+	cc, err := c.Listen("localhost:58081")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -286,7 +286,7 @@ func Test0006Quic(t *testing.T) {
 
 	}()
 
-	ccc, err := c.Dial("localhost:58080")
+	ccc, err := c.Dial("localhost:58081")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -313,7 +313,7 @@ func Test0008Quic(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen("localhost:58080")
+	cc, err := c.Listen("localhost:58081")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -348,7 +348,7 @@ func Test0008Quic(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	ccc, err := c.Dial("localhost:58080")
+	ccc, err := c.Dial("localhost:58081")
 	if err != nil {
 		fmt.Println(err)
 		return

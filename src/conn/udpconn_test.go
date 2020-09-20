@@ -15,7 +15,7 @@ func Test000UDP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58086")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -41,7 +41,7 @@ func Test0002UDP(t *testing.T) {
 	}
 
 	go func() {
-		conn, err := c.Dial("9.9.9.9:58080")
+		conn, err := c.Dial("9.9.9.9:58086")
 		if err != nil {
 			fmt.Println(err)
 		} else {
@@ -64,7 +64,7 @@ func Test0003UDP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58086")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -75,7 +75,7 @@ func Test0003UDP(t *testing.T) {
 		fmt.Println("accept done")
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58086")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -105,7 +105,7 @@ func Test0004UDP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58086")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -116,7 +116,7 @@ func Test0004UDP(t *testing.T) {
 		fmt.Println("accept done")
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58086")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -149,7 +149,7 @@ func Test0005UDP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58086")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -176,7 +176,7 @@ func Test0005UDP(t *testing.T) {
 		}
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58086")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -208,7 +208,7 @@ func Test0005UDP1(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58086")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -233,7 +233,7 @@ func Test0005UDP1(t *testing.T) {
 	}()
 
 	fmt.Println("start Dial")
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58086")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -273,7 +273,7 @@ func Test0008UDP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58086")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -308,7 +308,7 @@ func Test0008UDP(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58086")
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -15,7 +15,7 @@ func Test000RUDP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58084")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -41,7 +41,7 @@ func Test0002RUDP(t *testing.T) {
 	}
 
 	go func() {
-		conn, err := c.Dial("9.9.9.9:58080")
+		conn, err := c.Dial("9.9.9.9:58084")
 		fmt.Println("Dial return")
 		if err != nil {
 			fmt.Println(err)
@@ -66,7 +66,7 @@ func Test0003RUDP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58084")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -77,7 +77,7 @@ func Test0003RUDP(t *testing.T) {
 		fmt.Println("accept done")
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58084")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -110,7 +110,7 @@ func Test0004RUDP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58084")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -121,7 +121,7 @@ func Test0004RUDP(t *testing.T) {
 		fmt.Println("accept done")
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58084")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -154,7 +154,7 @@ func Test0005RUDP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58084")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -181,7 +181,7 @@ func Test0005RUDP(t *testing.T) {
 		}
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58084")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -213,7 +213,7 @@ func Test0005RUDP1(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58084")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -236,7 +236,7 @@ func Test0005RUDP1(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58084")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -272,7 +272,7 @@ func Test0006RUDP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58084")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -296,7 +296,7 @@ func Test0006RUDP(t *testing.T) {
 
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58084")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -325,7 +325,7 @@ func Test0007RUDP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58084")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -348,7 +348,7 @@ func Test0007RUDP(t *testing.T) {
 		fmt.Println("Read done")
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58084")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -370,7 +370,7 @@ func Test0008RUDP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58084")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -405,7 +405,7 @@ func Test0008RUDP(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58084")
 	if err != nil {
 		fmt.Println(err)
 		return

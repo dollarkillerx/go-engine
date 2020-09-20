@@ -15,7 +15,7 @@ func Test0001TCP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58085")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -41,7 +41,7 @@ func Test0002TCP(t *testing.T) {
 	}
 
 	go func() {
-		_, err := c.Dial("9.9.9.9:58080")
+		_, err := c.Dial("9.9.9.9:58085")
 		fmt.Println(err)
 	}()
 
@@ -59,7 +59,7 @@ func Test0003TCP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58085")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -70,7 +70,7 @@ func Test0003TCP(t *testing.T) {
 		fmt.Println("accept done")
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58085")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -100,7 +100,7 @@ func Test0004TCP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58085")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -111,7 +111,7 @@ func Test0004TCP(t *testing.T) {
 		fmt.Println("accept done")
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58085")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -144,7 +144,7 @@ func Test0005TCP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58085")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -171,7 +171,7 @@ func Test0005TCP(t *testing.T) {
 		}
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58085")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -203,7 +203,7 @@ func Test0005TCP1(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58085")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -226,7 +226,7 @@ func Test0005TCP1(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58085")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -262,7 +262,7 @@ func Test0006TCP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58085")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -286,7 +286,7 @@ func Test0006TCP(t *testing.T) {
 
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58085")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -313,7 +313,7 @@ func Test0008TCP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58085")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -348,7 +348,7 @@ func Test0008TCP(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	ccc, err := c.Dial(":58080")
+	ccc, err := c.Dial(":58085")
 	if err != nil {
 		fmt.Println(err)
 		return

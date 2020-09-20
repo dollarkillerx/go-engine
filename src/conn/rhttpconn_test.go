@@ -15,7 +15,7 @@ func Test000RHTTP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58082")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -41,7 +41,7 @@ func Test0002RHTTP(t *testing.T) {
 	}
 
 	go func() {
-		conn, err := c.Dial("9.9.9.9:58080")
+		conn, err := c.Dial("9.9.9.9:58082")
 		fmt.Println("Dial return")
 		if err != nil {
 			fmt.Println(err)
@@ -66,7 +66,7 @@ func Test0003RHTTP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58082")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -77,7 +77,7 @@ func Test0003RHTTP(t *testing.T) {
 		fmt.Println("accept done")
 	}()
 
-	ccc, err := c.Dial("127.0.0.1:58080")
+	ccc, err := c.Dial("127.0.0.1:58082")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -110,7 +110,7 @@ func Test0004RHTTP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58082")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -121,7 +121,7 @@ func Test0004RHTTP(t *testing.T) {
 		fmt.Println("accept done")
 	}()
 
-	ccc, err := c.Dial("127.0.0.1:58080")
+	ccc, err := c.Dial("127.0.0.1:58082")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -154,7 +154,7 @@ func Test0005RHTTP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58082")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -181,7 +181,7 @@ func Test0005RHTTP(t *testing.T) {
 		}
 	}()
 
-	ccc, err := c.Dial("127.0.0.1:58080")
+	ccc, err := c.Dial("127.0.0.1:58082")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -213,7 +213,7 @@ func Test0005RHTTP1(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58082")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -236,7 +236,7 @@ func Test0005RHTTP1(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	ccc, err := c.Dial("127.0.0.1:58080")
+	ccc, err := c.Dial("127.0.0.1:58082")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -272,7 +272,7 @@ func Test0006RHTTP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58082")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -296,7 +296,7 @@ func Test0006RHTTP(t *testing.T) {
 
 	}()
 
-	ccc, err := c.Dial("127.0.0.1:58080")
+	ccc, err := c.Dial("127.0.0.1:58082")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -325,7 +325,7 @@ func Test0007RHTTP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58082")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -348,7 +348,7 @@ func Test0007RHTTP(t *testing.T) {
 		fmt.Println("Read done")
 	}()
 
-	ccc, err := c.Dial("127.0.0.1:58080")
+	ccc, err := c.Dial("127.0.0.1:58082")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -370,7 +370,7 @@ func Test0008RHTTP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58082")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -405,7 +405,7 @@ func Test0008RHTTP(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	ccc, err := c.Dial("127.0.0.1:58080")
+	ccc, err := c.Dial("127.0.0.1:58082")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -451,7 +451,7 @@ func Test0009RHTTP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen(":58080")
+	cc, err := c.Listen(":58082")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -487,7 +487,7 @@ func Test0009RHTTP(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	ccc, err := c.Dial("127.0.0.1:58080")
+	ccc, err := c.Dial("127.0.0.1:58082")
 	if err != nil {
 		fmt.Println(err)
 		return
