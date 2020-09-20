@@ -287,6 +287,8 @@ func Test0008UDP(t *testing.T) {
 		return
 	}
 
+	exit := false
+
 	go func() {
 		cc, err := cc.Accept()
 		if err != nil {
@@ -297,7 +299,7 @@ func Test0008UDP(t *testing.T) {
 		data := make([]byte, 500)
 		start := time.Now()
 		speed := 0
-		for {
+		for !exit {
 			//fmt.Println("start Write")
 			_, err := cc.Write(data)
 			if err != nil {
@@ -330,7 +332,7 @@ func Test0008UDP(t *testing.T) {
 		buf := make([]byte, 500)
 		start := time.Now()
 		speed := 0
-		for {
+		for !exit {
 			//fmt.Println("start Read")
 			n, err := ccc.Read(buf)
 			//fmt.Println("start Read")
@@ -350,10 +352,12 @@ func Test0008UDP(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	time.Sleep(time.Second * 60)
+	time.Sleep(time.Second * 10)
 
 	cc.Close()
 	ccc.Close()
+
+	exit = true
 
 	time.Sleep(time.Second)
 }

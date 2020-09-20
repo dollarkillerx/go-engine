@@ -384,6 +384,8 @@ func Test0008RICMP(t *testing.T) {
 		return
 	}
 
+	exit := false
+
 	go func() {
 		cc, err := cc.Accept()
 		if err != nil {
@@ -394,7 +396,7 @@ func Test0008RICMP(t *testing.T) {
 		data := make([]byte, 1024*1024)
 		start := time.Now()
 		speed := 0
-		for {
+		for !exit {
 			//fmt.Println("start Write")
 			_, err := cc.Write(data)
 			if err != nil {
@@ -424,7 +426,7 @@ func Test0008RICMP(t *testing.T) {
 		buf := make([]byte, 1024*1024)
 		start := time.Now()
 		speed := 0
-		for {
+		for !exit {
 			//fmt.Println("start Read")
 			n, err := ccc.Read(buf)
 			if err != nil {
@@ -444,10 +446,12 @@ func Test0008RICMP(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	time.Sleep(time.Second * 60)
+	time.Sleep(time.Second * 10)
 
 	cc.Close()
 	ccc.Close()
+
+	exit = true
 
 	time.Sleep(time.Second)
 }
@@ -465,6 +469,8 @@ func Test0009RICMP(t *testing.T) {
 		return
 	}
 
+	exit := false
+
 	go func() {
 		cc, err := cc.Accept()
 		if err != nil {
@@ -475,7 +481,7 @@ func Test0009RICMP(t *testing.T) {
 		buf := make([]byte, 1024*1024)
 		start := time.Now()
 		speed := 0
-		for {
+		for !exit {
 			//fmt.Println("start Read")
 			n, err := cc.Read(buf)
 			if err != nil {
@@ -506,7 +512,7 @@ func Test0009RICMP(t *testing.T) {
 		data := make([]byte, 1024*1024)
 		start := time.Now()
 		speed := 0
-		for {
+		for !exit {
 			//fmt.Println("start Write")
 			_, err := ccc.Write(data)
 			if err != nil {
@@ -525,10 +531,12 @@ func Test0009RICMP(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	time.Sleep(time.Second * 60)
+	time.Sleep(time.Second * 10)
 
 	cc.Close()
 	ccc.Close()
+
+	exit = true
 
 	time.Sleep(time.Second)
 }
