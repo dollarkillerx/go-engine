@@ -46,7 +46,7 @@ func Test0002KCP(t *testing.T) {
 	}
 
 	go func() {
-		_, err := c.Dial("9.9.9.9127.0.0.1:58080")
+		_, err := c.Dial("9.9.9.9127.0.0.1:58280")
 		fmt.Println(err)
 	}()
 
@@ -64,7 +64,7 @@ func Test0003KCP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen("127.0.0.1:58080")
+	cc, err := c.Listen("127.0.0.1:58380")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -75,7 +75,7 @@ func Test0003KCP(t *testing.T) {
 		fmt.Println("accept done")
 	}()
 
-	ccc, err := c.Dial("127.0.0.1:58080")
+	ccc, err := c.Dial("127.0.0.1:58380")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -105,7 +105,7 @@ func Test0004KCP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen("127.0.0.1:58080")
+	cc, err := c.Listen("127.0.0.1:58480")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -116,7 +116,7 @@ func Test0004KCP(t *testing.T) {
 		fmt.Println("accept done")
 	}()
 
-	ccc, err := c.Dial("127.0.0.1:58080")
+	ccc, err := c.Dial("127.0.0.1:58480")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -149,11 +149,13 @@ func Test0005KCP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen("127.0.0.1:58080")
+	cc, err := c.Listen("127.0.0.1:58580")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+
+	exit := false
 
 	go func() {
 		cc, err := cc.Accept()
@@ -164,7 +166,7 @@ func Test0005KCP(t *testing.T) {
 		defer cc.Close()
 		fmt.Println("accept done")
 		buf := make([]byte, 10)
-		for {
+		for !exit {
 			n, err := cc.Read(buf)
 			if err != nil {
 				fmt.Println(err)
@@ -176,14 +178,14 @@ func Test0005KCP(t *testing.T) {
 		}
 	}()
 
-	ccc, err := c.Dial("127.0.0.1:58080")
+	ccc, err := c.Dial("127.0.0.1:58580")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
 	go func() {
-		for i := 0; i < 10000; i++ {
+		for i := 0; i < 10000 && !exit; i++ {
 			_, err := ccc.Write([]byte("hahaha" + strconv.Itoa(i)))
 			if err != nil {
 				fmt.Println(err)
@@ -193,10 +195,12 @@ func Test0005KCP(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Second)
 
 	cc.Close()
 	ccc.Close()
+
+	exit = true
 
 	time.Sleep(time.Second)
 }
@@ -208,11 +212,13 @@ func Test0005KCP1(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen("127.0.0.1:58080")
+	cc, err := c.Listen("127.0.0.1:58680")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+
+	exit := false
 
 	go func() {
 		//fmt.Println("start Accept")
@@ -222,7 +228,7 @@ func Test0005KCP1(t *testing.T) {
 			return
 		}
 		//fmt.Println("end Accept")
-		for i := 0; i < 10000; i++ {
+		for i := 0; i < 10000 && !exit; i++ {
 			_, err := cc.Write([]byte("hahaha" + strconv.Itoa(i)))
 			if err != nil {
 				fmt.Println(err)
@@ -232,7 +238,7 @@ func Test0005KCP1(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	ccc, err := c.Dial("127.0.0.1:58080")
+	ccc, err := c.Dial("127.0.0.1:58680")
 	if err != nil {
 		fmt.Println("Dial " + err.Error())
 		return
@@ -241,7 +247,7 @@ func Test0005KCP1(t *testing.T) {
 
 	go func() {
 		buf := make([]byte, 10)
-		for {
+		for !exit {
 			//fmt.Println("start Read")
 			n, err := ccc.Read(buf)
 			//fmt.Println("end Read")
@@ -262,6 +268,8 @@ func Test0005KCP1(t *testing.T) {
 	cc.Close()
 	ccc.Close()
 
+	exit = true
+
 	time.Sleep(time.Second)
 }
 
@@ -272,7 +280,7 @@ func Test0006KCP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen("127.0.0.1:58080")
+	cc, err := c.Listen("127.0.0.1:58780")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -296,7 +304,7 @@ func Test0006KCP(t *testing.T) {
 
 	}()
 
-	ccc, err := c.Dial("127.0.0.1:58080")
+	ccc, err := c.Dial("127.0.0.1:58780")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -323,7 +331,7 @@ func Test0008KCP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen("127.0.0.1:58080")
+	cc, err := c.Listen("127.0.0.1:58880")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -358,7 +366,7 @@ func Test0008KCP(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	ccc, err := c.Dial("127.0.0.1:58080")
+	ccc, err := c.Dial("127.0.0.1:58880")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -404,7 +412,7 @@ func Test0009KCP(t *testing.T) {
 		return
 	}
 
-	cc, err := c.Listen("127.0.0.1:58080")
+	cc, err := c.Listen("127.0.0.1:58980")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -440,7 +448,7 @@ func Test0009KCP(t *testing.T) {
 		fmt.Println("write done")
 	}()
 
-	ccc, err := c.Dial("127.0.0.1:58080")
+	ccc, err := c.Dial("127.0.0.1:58980")
 	if err != nil {
 		fmt.Println(err)
 		return

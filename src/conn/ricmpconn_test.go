@@ -160,6 +160,8 @@ func Test0005RICMP(t *testing.T) {
 		return
 	}
 
+	exit := false
+
 	go func() {
 		cc, err := cc.Accept()
 		if err != nil {
@@ -169,7 +171,7 @@ func Test0005RICMP(t *testing.T) {
 		defer cc.Close()
 		fmt.Println("accept done")
 		buf := make([]byte, 10)
-		for {
+		for !exit {
 			n, err := cc.Read(buf)
 			if err != nil {
 				fmt.Println(err)
@@ -188,7 +190,7 @@ func Test0005RICMP(t *testing.T) {
 	}
 
 	go func() {
-		for i := 0; i < 10000; i++ {
+		for i := 0; i < 10000 && !exit; i++ {
 			_, err := ccc.Write([]byte("hahaha" + strconv.Itoa(i)))
 			if err != nil {
 				fmt.Println(err)
@@ -202,6 +204,8 @@ func Test0005RICMP(t *testing.T) {
 
 	cc.Close()
 	ccc.Close()
+
+	exit = true
 
 	time.Sleep(time.Second)
 }
@@ -219,6 +223,8 @@ func Test0005RICMP1(t *testing.T) {
 		return
 	}
 
+	exit := false
+
 	go func() {
 		cc, err := cc.Accept()
 		if err != nil {
@@ -226,7 +232,7 @@ func Test0005RICMP1(t *testing.T) {
 			return
 		}
 		fmt.Println("accept done")
-		for i := 0; i < 10000; i++ {
+		for i := 0; i < 10000 && !exit; i++ {
 			_, err := cc.Write([]byte("hahaha" + strconv.Itoa(i)))
 			if err != nil {
 				fmt.Println(err)
@@ -244,7 +250,7 @@ func Test0005RICMP1(t *testing.T) {
 
 	go func() {
 		buf := make([]byte, 10)
-		for {
+		for !exit {
 			n, err := ccc.Read(buf)
 			if err != nil {
 				fmt.Println(err)
@@ -261,6 +267,8 @@ func Test0005RICMP1(t *testing.T) {
 
 	cc.Close()
 	ccc.Close()
+
+	exit = true
 
 	time.Sleep(time.Second)
 }
