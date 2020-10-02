@@ -95,10 +95,16 @@ func Sock5Handshake(conn *net.TCPConn, timeoutms int, username string, password 
 		socket5Authentication = append(socket5Authentication, byte(passLen))
 		socket5Authentication = append(socket5Authentication, []byte(password)...)
 
+		if timeoutms > 0 {
+			conn.SetDeadline(time.Now().Add(time.Duration(timeoutms) * time.Millisecond))
+		}
 		if _, err := conn.Write(socket5Authentication); err != nil {
 			return errors.New("proxy: failed to read send Authentication from SOCKS5 proxy at " + conn.RemoteAddr().String() + ": " + err.Error())
 		}
 
+		if timeoutms > 0 {
+			conn.SetDeadline(time.Now().Add(time.Duration(timeoutms) * time.Millisecond))
+		}
 		if _, err := io.ReadFull(conn, buf[:2]); err != nil {
 			return errors.New("proxy: failed to read Authentication from SOCKS5 proxy at " + conn.RemoteAddr().String() + ": " + err.Error())
 		}
@@ -107,6 +113,10 @@ func Sock5Handshake(conn *net.TCPConn, timeoutms int, username string, password 
 		}
 
 		return nil
+	}
+
+	if timeoutms > 0 {
+		conn.SetDeadline(time.Time{})
 	}
 }
 
@@ -174,6 +184,10 @@ func Sock5SetRequest(conn *net.TCPConn, host string, port int, timeoutms int) (e
 	_, err = readSocksPort(conn)
 	if err != nil {
 		return fmt.Errorf("proxy: invalid request: fail to read dst port: %s", err)
+	}
+
+	if timeoutms > 0 {
+		conn.SetDeadline(time.Time{})
 	}
 
 	return nil
