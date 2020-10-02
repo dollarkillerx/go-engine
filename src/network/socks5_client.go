@@ -60,6 +60,10 @@ func Sock5Handshake(conn *net.TCPConn, timeoutms int, username string, password 
 			return errors.New("proxy: SOCKS5 proxy at " + conn.RemoteAddr().String() + " requires authentication")
 		}
 
+		if timeoutms > 0 {
+			conn.SetDeadline(time.Time{})
+		}
+
 		return nil
 	} else {
 		buf := make([]byte, 0)
@@ -112,11 +116,11 @@ func Sock5Handshake(conn *net.TCPConn, timeoutms int, username string, password 
 			return errors.New("proxy: SOCKS5 proxy at " + conn.RemoteAddr().String() + " fail authentication")
 		}
 
-		return nil
-	}
+		if timeoutms > 0 {
+			conn.SetDeadline(time.Time{})
+		}
 
-	if timeoutms > 0 {
-		conn.SetDeadline(time.Time{})
+		return nil
 	}
 }
 
