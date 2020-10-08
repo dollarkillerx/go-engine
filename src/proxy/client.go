@@ -293,6 +293,12 @@ func (c *Client) iniService(wg *group.Group, index int, serverConn *ServerConn) 
 			return err
 		}
 		serverConn.output = output
+	case CLIENT_TYPE_SS_PROXY:
+		input, err := NewInputer(wg, c.proxyproto[index].String(), c.fromaddr[index], c.clienttype, c.config, &serverConn.ProxyConn, c.toaddr[index])
+		if err != nil {
+			return err
+		}
+		serverConn.input = input
 	default:
 		return errors.New("error CLIENT_TYPE " + strconv.Itoa(int(c.clienttype)))
 	}

@@ -18,6 +18,8 @@ enum CLIENT_TYPE {
     SOCKS5 = 2;
     // server fromaddr -> client
     REVERSE_SOCKS5 = 3;
+    // client fromaddr -> server shadowsocks address [SS_LOCAL_HOST:SS_LOCAL_PORT]
+    SS_PROXY = 4;
 }
 
 message LoginFrame {

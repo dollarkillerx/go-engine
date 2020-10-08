@@ -5,6 +5,7 @@ import (
 	"github.com/esrrhs/go-engine/src/conn"
 	"github.com/esrrhs/go-engine/src/group"
 	"github.com/esrrhs/go-engine/src/loggo"
+	"os"
 	"sync"
 	"sync/atomic"
 )
@@ -18,6 +19,8 @@ type Outputer struct {
 
 	conn  conn.Conn
 	sonny sync.Map
+
+	ss bool
 }
 
 func NewOutputer(wg *group.Group, proto string, clienttype CLIENT_TYPE, config *Config, father *ProxyConn) (*Outputer, error) {
@@ -36,6 +39,27 @@ func NewOutputer(wg *group.Group, proto string, clienttype CLIENT_TYPE, config *
 	}
 
 	loggo.Info("NewOutputer ok %s", proto)
+
+	return output, nil
+}
+
+func NewSSOutputer(wg *group.Group, proto string, clienttype CLIENT_TYPE, config *Config, father *ProxyConn) (*Outputer, error) {
+	conn, err := conn.NewConn(proto)
+	if conn == nil {
+		return nil, err
+	}
+
+	output := &Outputer{
+		clienttype: clienttype,
+		config:     config,
+		conn:       conn,
+		proto:      proto,
+		father:     father,
+		fwg:        wg,
+		ss:         true,
+	}
+
+	loggo.Info("NewSSOutputer ok %s", proto)
 
 	return output, nil
 }
@@ -140,6 +164,18 @@ func (o *Outputer) processOpenFrame(f *ProxyFrame) {
 	rf.OpenRspFrame = &OpenConnRspFrame{}
 	rf.OpenRspFrame.Id = id
 	rf.OpenRspFrame.Ret = false
+
+	if o.ss {
+		ss_local_host := os.Getenv("SS_LOCAL_HOST")
+		ss_local_port := os.Getenv("SS_LOCAL_PORT")
+		if len(ss_local_host) <= 0 || len(ss_local_port) <= 0 {
+			rf.OpenRspFrame.Msg = "ss no env"
+			o.father.sendch.Write(rf)
+			loggo.Info("Outputer ss no env %s %s", ss_local_host, ss_local_port)
+			return
+		}
+		targetAddr = ss_local_host + ":" + ss_local_port
+	}
 
 	size := o.sonnySize()
 	if size >= o.config.MaxSonny {

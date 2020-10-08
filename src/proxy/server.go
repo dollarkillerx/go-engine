@@ -316,6 +316,12 @@ func (s *Server) iniService(wg *group.Group, f *ProxyFrame, clientConn *ClientCo
 			return err
 		}
 		clientConn.input = input
+	case CLIENT_TYPE_SS_PROXY:
+		output, err := NewSSOutputer(wg, f.LoginFrame.Proxyproto.String(), f.LoginFrame.Clienttype, s.config, &clientConn.ProxyConn)
+		if err != nil {
+			return err
+		}
+		clientConn.output = output
 	default:
 		return errors.New("error CLIENT_TYPE " + strconv.Itoa(int(f.LoginFrame.Clienttype)))
 	}
