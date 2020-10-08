@@ -54,8 +54,6 @@ func Ini(config Config) {
 		panic("log prefix contain _")
 	}
 
-	Warn("loggo Ini")
-
 	gInited = true
 	if !initbefore {
 		go loopCheck(gConfig)
