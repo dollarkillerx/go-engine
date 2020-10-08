@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/esrrhs/go-engine/src/termcolor"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -27,6 +28,7 @@ type Config struct {
 	NoPrint    bool
 	NoLogColor bool
 	FullPath   bool
+	printer    io.Writer
 }
 
 var gConfig Config
@@ -55,8 +57,20 @@ func Ini(config Config) {
 	}
 
 	gInited = true
-	if !initbefore {
+	if !initbefore && !gConfig.NoLogFile {
 		go loopCheck(gConfig)
+	}
+}
+
+func SetPrinter(w io.Writer) {
+	gConfig.printer = w
+}
+
+func print(str string) {
+	if gConfig.printer != nil {
+		gConfig.printer.Write([]byte(str))
+	} else {
+		fmt.Print(str)
 	}
 }
 
@@ -70,9 +84,9 @@ func Debug(format string, a ...interface{}) {
 		}
 		if !gConfig.NoPrint {
 			if !gConfig.NoLogColor {
-				fmt.Print(termcolor.FgString(str, 0, 0, 255))
+				print(termcolor.FgString(str, 0, 0, 255))
 			} else {
-				fmt.Print(str)
+				print(str)
 			}
 		}
 	}
@@ -95,9 +109,9 @@ func Info(format string, a ...interface{}) {
 		}
 		if !gConfig.NoPrint {
 			if !gConfig.NoLogColor {
-				fmt.Print(termcolor.FgString(str, 0, 255, 0))
+				print(termcolor.FgString(str, 0, 255, 0))
 			} else {
-				fmt.Print(str)
+				print(str)
 			}
 		}
 	}
@@ -127,9 +141,9 @@ func Warn(format string, a ...interface{}) {
 		}
 		if !gConfig.NoPrint {
 			if !gConfig.NoLogColor {
-				fmt.Print(termcolor.FgString(str, 255, 255, 0))
+				print(termcolor.FgString(str, 255, 255, 0))
 			} else {
-				fmt.Print(str)
+				print(str)
 			}
 		}
 	}
@@ -166,9 +180,9 @@ func Error(format string, a ...interface{}) {
 		}
 		if !gConfig.NoPrint {
 			if !gConfig.NoLogColor {
-				fmt.Print(termcolor.FgString(str, 255, 0, 0))
+				print(termcolor.FgString(str, 255, 0, 0))
 			} else {
-				fmt.Print(str)
+				print(str)
 			}
 		}
 	}
