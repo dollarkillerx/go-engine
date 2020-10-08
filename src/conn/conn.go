@@ -5,6 +5,7 @@ import (
 	"github.com/esrrhs/go-engine/src/common"
 	"io"
 	"strings"
+	"syscall"
 )
 
 type Conn interface {
@@ -64,4 +65,10 @@ func HasReliableProto(proto string) bool {
 
 func HasProto(proto string) bool {
 	return common.HasString(SupportProtos(), proto)
+}
+
+var gControlOnConnSetup func(network, address string, c syscall.RawConn) error
+
+func RegisterDialerController(fn func(network, address string, c syscall.RawConn) error) {
+	gControlOnConnSetup = fn
 }

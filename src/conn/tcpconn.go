@@ -65,6 +65,9 @@ func (c *TcpConn) Dial(dst string) (Conn, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	c.cancel = cancel
 	var d net.Dialer
+	if gControlOnConnSetup != nil {
+		d = net.Dialer{Control: gControlOnConnSetup}
+	}
 	conn, err := d.DialContext(ctx, "tcp", addr.String())
 	if err != nil {
 		return nil, err
