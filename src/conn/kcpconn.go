@@ -1,9 +1,11 @@
 package conn
 
 import (
+	"context"
 	"errors"
 	"github.com/xtaci/kcp-go"
 	"github.com/xtaci/smux"
+	"net"
 )
 
 type KcpConn struct {
@@ -55,12 +57,23 @@ func (c *KcpConn) Info() string {
 }
 
 func (c *KcpConn) Dial(dst string) (Conn, error) {
-	conn, err := kcp.Dial(dst)
+	var lc net.ListenConfig
+	if gControlOnConnSetup != nil {
+		lc.Control = gControlOnConnSetup
+	}
+
+	laddr := &net.UDPAddr{}
+	pconn, err := lc.ListenPacket(context.Background(), "udp", laddr.String())
 	if err != nil {
 		return nil, err
 	}
 
-	c.setParam(conn.(*kcp.UDPSession))
+	conn, err := kcp.NewConn(dst, nil, 0, 0, pconn.(*net.UDPConn))
+	if err != nil {
+		return nil, err
+	}
+
+	c.setParam(conn)
 
 	session, err := smux.Client(conn, nil)
 	if err != nil {
