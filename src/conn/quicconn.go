@@ -7,6 +7,7 @@ import (
 	"github.com/esrrhs/go-engine/src/common"
 	"github.com/lucas-clemente/quic-go"
 	"github.com/xtaci/smux"
+	"net"
 )
 
 type QuicConn struct {
@@ -65,7 +66,23 @@ func (c *QuicConn) Dial(dst string) (Conn, error) {
 		NextProtos:         []string{"QuicConn"},
 	}
 
-	session, err := quic.DialAddr(dst, tlsConf, nil)
+	var lc net.ListenConfig
+	if gControlOnConnSetup != nil {
+		lc.Control = gControlOnConnSetup
+	}
+
+	laddr := &net.UDPAddr{}
+	pconn, err := lc.ListenPacket(context.Background(), "udp", laddr.String())
+	if err != nil {
+		return nil, err
+	}
+
+	udpAddr, err := net.ResolveUDPAddr("udp", dst)
+	if err != nil {
+		return nil, err
+	}
+
+	session, err := quic.Dial(pconn, udpAddr, dst, tlsConf, nil)
 	if err != nil {
 		return nil, err
 	}
