@@ -259,7 +259,17 @@ func (c *RhttpConn) postData(url string, d []byte) (int, []byte, error) {
 	}
 	req.Header.Set("Content-Type", "application/octet-stream")
 
+	tp := http.Transport{}
+	tp.Dial = func(network, addr string) (net.Conn, error) {
+		var d net.Dialer
+		if gControlOnConnSetup != nil {
+			d = net.Dialer{Control: gControlOnConnSetup}
+		}
+		return d.Dial(network, addr)
+	}
+
 	client := &http.Client{}
+	client.Transport = &tp
 	resp, err := client.Do(req)
 	if err != nil {
 		return 0, nil, err
