@@ -381,6 +381,9 @@ func recvFromSonny(wg *group.Group, recvch *common.Channel, conn conn.Conn, maxm
 		msglen, err := conn.Read(ds)
 		if err != nil {
 			loggo.Info("recvFromSonny Read fail: %s %s", conn.Info(), err.Error())
+			if err == io.EOF {
+				return nil
+			}
 			return err
 		}
 
