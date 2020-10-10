@@ -167,7 +167,7 @@ func (g *Group) Wait() error {
 				g.exit(errors.New("father exit"))
 			}
 		}
-		time.Sleep(time.Millisecond * 10)
+		time.Sleep(time.Millisecond * 100)
 	}
 	if g.father != nil {
 		g.father.removeson(g)
