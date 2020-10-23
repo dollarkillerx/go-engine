@@ -94,3 +94,29 @@ func RunCommand(command string, silent bool) string {
 
 	return outstr
 }
+
+func RunExe(exe string, silent bool, param ...string) string {
+
+	exe = filepath.Clean(exe)
+	exe = filepath.ToSlash(exe)
+
+	if !silent {
+		loggo.Info("shell Run start %v %v ", exe, fmt.Sprint(param))
+	}
+
+	begin := time.Now()
+	cmd := exec.Command(exe, param...)
+	out, err := cmd.CombinedOutput()
+	outstr := string(out)
+	if err != nil {
+		loggo.Warn("shell Run fail %v %v", cmd.Args, outstr)
+		return ""
+	}
+
+	if !silent {
+		loggo.Info("shell Run ok %v %v", cmd.Args, time.Now().Sub(begin))
+		loggo.Info("%v", outstr)
+	}
+
+	return outstr
+}
