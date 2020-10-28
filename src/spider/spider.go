@@ -355,63 +355,31 @@ func Parser(running *int32, group *sync.WaitGroup, jbd *JobDB, dbd *DoneDB, conf
 				continue
 			}
 
-			ss := strings.ToLower(sonurl)
-
 			if s.UI.Deps >= config.Deps {
 				stat.ParseTooDeepNum++
 				continue
 			}
 
-			if strings.HasPrefix(ss, "http://") || strings.HasPrefix(ss, "https://") {
-
-			} else if strings.HasPrefix(ss, "/") {
-				sonurl = srcURL.Scheme + "://" + srcURL.Host + sonurl
-			} else {
-				dir := srcURL.Path
-
-				dirIndex := strings.LastIndex(dir, "/")
-				if dirIndex >= 0 {
-					dir = dir[0:dirIndex]
-				} else {
-					dir = ""
-				}
-				sonurl = srcURL.Scheme + "://" + srcURL.Host + dir + "/" + sonurl
-
-				mIndex := strings.Index(sonurl, "#")
-				if mIndex >= 0 {
-					sonurl = sonurl[0:mIndex]
-				}
-			}
-
-			for {
-				new := strings.Replace(sonurl, "/./", "/", -1)
-				if new == sonurl {
-					break
-				}
-				sonurl = new
-			}
-
-			_, err := url.Parse(sonurl)
+			sonu, err := url.Parse(sonurl)
 			if err != nil {
 				continue
 			}
+
+			sonu = srcURL.ResolveReference(sonu)
+			sonurl = sonu.String()
 
 			var tmp *URLInfo
 
 			finded := hasDone(dbd, sonurl, stat)
 			if !finded {
 				if config.FocusSpider {
-					dstURL, dsterr := url.Parse(sonurl)
+					dstParams := strings.Split(sonu.Host, ".")
+					srcParams := strings.Split(srcURL.Host, ".")
 
-					if dsterr == nil {
-						dstParams := strings.Split(dstURL.Host, ".")
-						srcParams := strings.Split(srcURL.Host, ".")
-
-						if len(dstParams) >= 2 && len(srcParams) >= 2 &&
-							dstParams[len(dstParams)-1] == srcParams[len(srcParams)-1] &&
-							dstParams[len(dstParams)-2] == srcParams[len(srcParams)-2] {
-							tmp = &URLInfo{sonurl, s.UI.Deps}
-						}
+					if len(dstParams) >= 2 && len(srcParams) >= 2 &&
+						dstParams[len(dstParams)-1] == srcParams[len(srcParams)-1] &&
+						dstParams[len(dstParams)-2] == srcParams[len(srcParams)-2] {
+						tmp = &URLInfo{sonurl, s.UI.Deps}
 					}
 				} else {
 					tmp = &URLInfo{sonurl, s.UI.Deps}
